@@ -1,3 +1,7 @@
+Bitcore Bitcoin build with address indexes and ScriptPubKey indexes
+
+______________________________________________________________________________________________________________________
+
 Bitcoin Core integration/staging tree
 =====================================
 
