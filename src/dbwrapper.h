@@ -57,6 +57,17 @@ public:
         batch.Put(slKey, slValue);
     }
 
+    template <typename K, typename V>
+    void WriteStrings(const K& key, const V& value)
+    {
+        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
+        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey << key;
+        leveldb::Slice slKey(&ssKey[0], ssKey.size());
+
+        batch.Put(slKey, value);
+    }
+
     template <typename K>
     void Erase(const K& key)
     {
@@ -203,6 +214,26 @@ public:
             ssValue >> value;
         } catch (const std::exception&) {
             return false;
+        }
+        return true;
+    }
+
+    template <typename K, typename V>
+    bool ReadSingleKey(const K& key, V& value) const throw(dbwrapper_error)
+    {
+        CDataStream ssKey(SER_DISK, CLIENT_VERSION);
+        ssKey.reserve(ssKey.GetSerializeSize(key));
+        ssKey << key;
+        leveldb::Slice slKey(&ssKey[0], ssKey.size());
+
+        leveldb::Status status = pdb->Get(readoptions, slKey, &value);
+        LogPrintf("LevelDB - ReadSingleKey - Retrieved Values: %s\n", value);
+
+        if (!status.ok()) {
+            if (status.IsNotFound())
+                return false;
+            LogPrintf("LevelDB read failure: %s\n", status.ToString());
+            HandleError(status);
         }
         return true;
     }

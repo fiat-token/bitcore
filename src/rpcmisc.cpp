@@ -22,11 +22,16 @@
 #include <stdint.h>
 
 #include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <univalue.h>
+#include <iostream>
+#include "logger.cpp"
 
 using namespace std;
 
+extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
+extern void TxToJSONExpanded(const CTransaction& tx, const uint256 hashBlock, UniValue& entry, int nHeight = 0, int nConfirmations = 0, int nBlockTime = 0);
 /**
  * @note Do not add or change anything in the information returned by this
  * method. `getinfo` exists for backwards-compatibility only. It combines
@@ -875,6 +880,71 @@ UniValue getaddresstxids(const UniValue& params, bool fHelp)
 
     return result;
 
+}
+
+UniValue getopreturn(const UniValue& params, bool fHelp)
+{
+    std::cout << "Starting getopreturn method" << "\n";
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error("Parameters Error");
+
+    LOCK(cs_main);
+    RPCTypeCheck(params, boost::assign::list_of(UniValue::VSTR));
+
+    std::string opreturn = params[0].get_str();
+    std::cout << "Input parameter: " << opreturn << "\n";
+
+    std::string txids;
+
+    if (!GetOpReturnIndex(opreturn, txids))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about opreturn");
+
+    LogPrintf("rpcmisc - getopreturn - txids: %s\n", txids);
+
+    std::vector<std::string> txidsArray;
+    boost::split(txidsArray, txids, boost::is_any_of(","));
+
+    UniValue results(UniValue::VARR);
+
+    for (std::vector<std::string>::const_iterator txihash = txidsArray.begin(); txihash != txidsArray.end(); ++txihash)
+    {
+        LogPrintf("rpcmisc - getopreturn - txid: %s\n", *txihash);
+
+        CTransaction txi;
+        uint256 hashBlock;
+        int nHeight = 0;
+        int nConfirmations = 0;
+        int nBlockTime = 0;
+
+        if (!GetTransaction(uint256S(*txihash), txi, Params().GetConsensus(), hashBlock, true))
+            LogPrintf("rpcmisc - getopreturn - No information available about transaction '%s'\n", *txihash);
+
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second) {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex)) {
+                nHeight = pindex->nHeight;
+                nConfirmations = 1 + chainActive.Height() - pindex->nHeight;
+                nBlockTime = pindex->GetBlockTime();
+            } else {
+                nHeight = -1;
+                nConfirmations = 0;
+                nBlockTime = pindex->GetBlockTime();
+            }
+        }
+
+        UniValue entry(UniValue::VOBJ);
+        TxToJSONExpanded(txi, hashBlock, entry, nHeight, nConfirmations, nBlockTime);
+        // entry.push_back(make_pair("fees",));
+        entry.push_back(make_pair("valueOut",txi.GetValueOut()));
+        results.push_back(entry);
+    }
+
+    if(results.empty())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "No information available about opreturn's transactions");
+
+    return results;
 }
 
 UniValue getspentinfo(const UniValue& params, bool fHelp)

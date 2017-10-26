@@ -12,6 +12,8 @@
 #include "pow.h"
 #include "uint256.h"
 
+#include "util.h"
+
 #include <stdint.h>
 
 #include <boost/thread.hpp>
@@ -27,6 +29,7 @@ static const char DB_TIMESTAMPINDEX = 's';
 static const char DB_BLOCKHASHINDEX = 'z';
 static const char DB_SPENTINDEX = 'p';
 static const char DB_BLOCK_INDEX = 'b';
+static const char DB_OPRETURNKEY_INDEX = 'k';
 
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_FLAG = 'F';
@@ -167,6 +170,23 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
         batch.Write(make_pair(DB_TXINDEX, it->first), it->second);
     return WriteBatch(batch);
 }
+
+// Op Return Index
+bool CBlockTreeDB::ReadOpReturnIndex(const std::string &scriptHash, std::string &val) {
+    return ReadSingleKey(make_pair(DB_OPRETURNKEY_INDEX, scriptHash), val);
+}
+
+bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<std::pair<std::string, std::string> >&vect) {
+    CDBBatch batch(&GetObfuscateKey());
+    for (std::vector<std::pair<std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+    {
+        LogPrintf("Write Op Return Index: %s - %s\n",it->first, it->second);
+        batch.WriteStrings(make_pair(DB_OPRETURNKEY_INDEX, it->first), it->second);
+    }
+    return WriteBatch(batch);
+}
+
+//End Op Return Index
 
 bool CBlockTreeDB::ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value) {
     return Read(make_pair(DB_SPENTINDEX, key), value);

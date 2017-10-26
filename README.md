@@ -1,4 +1,4 @@
-Bitcore Bitcoin build with address indexes and ScriptPubKey indexes
+Bitcore Bitcoin build with address and Op Return indexes
 
 ______________________________________________________________________________________________________________________
 

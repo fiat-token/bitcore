@@ -17,6 +17,7 @@
 class CBlockFileInfo;
 class CBlockIndex;
 struct CDiskTxPos;
+struct CDiskPubKeyPos;
 struct CAddressUnspentKey;
 struct CAddressUnspentValue;
 struct CAddressIndexKey;
@@ -28,6 +29,7 @@ struct CTimestampBlockIndexKey;
 struct CTimestampBlockIndexValue;
 struct CSpentIndexKey;
 struct CSpentIndexValue;
+
 class uint256;
 
 //! -dbcache default (MiB)
@@ -68,6 +70,8 @@ public:
     bool ReadReindexing(bool &fReindex);
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
     bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &list);
+    bool ReadOpReturnIndex(const std::string &opreturnHash, std::string &val);
+    bool WriteOpReturnIndex(const std::vector<std::pair<std::string, std::string> > &list);
     bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
     bool UpdateSpentIndex(const std::vector<std::pair<CSpentIndexKey, CSpentIndexValue> >&vect);
     bool UpdateAddressUnspentIndex(const std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue > >&vect);

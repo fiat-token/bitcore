@@ -36,6 +36,8 @@
 #include "validationinterface.h"
 #include "versionbits.h"
 
+#include "core_io.h"
+
 #include <sstream>
 
 #include <boost/algorithm/string/replace.hpp>
@@ -43,6 +45,11 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
+#include <boost/assign/list_of.hpp>
+
+#include <iostream>
+#include <vector>
+#include "logger.cpp"
 
 using namespace std;
 
@@ -66,6 +73,7 @@ int nScriptCheckThreads = 0;
 bool fImporting = false;
 bool fReindex = false;
 bool fTxIndex = false;
+bool fOpReturnIndex = false;
 bool fAddressIndex = false;
 bool fTimestampIndex = false;
 bool fSpentIndex = false;
@@ -1425,7 +1433,7 @@ bool AcceptToMemoryPoolWorker(CTxMemPool& pool, CValidationState &state, const C
         if (fSpentIndex) {
             pool.addSpentIndex(entry, view);
         }
-
+        
         // trim mempool and check if tx was trimmed
         if (!fOverrideMempoolLimit) {
             LimitMempoolSize(pool, GetArg("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000, GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
@@ -1498,6 +1506,25 @@ bool GetAddressUnspent(uint160 addressHash, int type,
         return error("unable to get txids for address");
 
     return true;
+}
+
+bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
+{
+    LogPrintf("GetOpReturnIndex Init\n");
+
+    if (!fOpReturnIndex)
+        return error("op return index not enabled");
+
+    LogPrintf("GetOpReturnIndex - OpreturnHash: %s\n", opreturnHash);
+
+    if (pblocktree->ReadOpReturnIndex(opreturnHash, txi)) {
+        LogPrintf("GetOpReturnIndex - Hash: %s - Tx Id: %s\n", opreturnHash, txi);
+        // if (tx.GetHash() != opreturnHash)
+        //     return error("%s: txid mismatch", __func__);
+        return true;
+    }
+    
+    return false;
 }
 
 /** Return transaction in tx, and if it was found inside a block, its hash is placed in hashBlock */
@@ -2353,6 +2380,84 @@ static int64_t nTimeIndex = 0;
 static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
+
+void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<std::pair<std::string, std::string> > &vPubKeyPos)
+{
+    std::string script_asm = ScriptToAsmStr(scriptPubKey);
+    LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
+
+    if (script_asm.find("OP_RETURN") == std::string::npos) 
+    {
+        LogPrint("bench", "CreateOpReturnIndexes - Script '%s' is not an OP_RETURN, index not added\n", script_asm);
+        return;
+    }
+    
+    std::string substring_asm = script_asm.substr(script_asm.find(" ") + 1);
+    LogPrint("bench", "CreateOpReturnIndexes - Script ASM SUBSTRING: %s\n", substring_asm);
+
+    unsigned int parsed = 0;
+    unsigned int typeSize = 2;
+    unsigned int lengthSize = 2;
+    std::vector<std::string> opreturnsData;
+
+    LogPrint("bench", "CreateOpReturnIndexes - substring_asm length %d\n", substring_asm.length());
+    LogPrint("bench", "CreateOpReturnIndexes - Parsed index %d\n", parsed);
+
+    std::vector<std::string> allowedTypes = boost::assign::list_of("1c")("1d")("1e");
+
+    while (parsed < substring_asm.length())
+    {
+        LogPrint("bench", "CreateOpReturnIndexes - Starting cycle with index %d\n", parsed);
+        std::string type = substring_asm.substr(parsed, typeSize);
+
+        if (!str_in_array(type, allowedTypes)) {
+            LogPrint("bench", "CreateOpReturnIndexes - Type '%s' doesn't belong to allowed ones\n", type);
+            return;
+        }
+
+        LogPrint("bench", "CreateOpReturnIndexes - Type: %s\n", type);
+        parsed = parsed + typeSize;
+        LogPrint("bench", "CreateOpReturnIndexes - Getting length with parsed = %d and end = %d\n", parsed, lengthSize);
+        std::string length_hex = substring_asm.substr(parsed, lengthSize);
+        parsed = parsed + lengthSize;
+        LogPrint("bench", "CreateOpReturnIndexes - length_hex %d\n", length_hex);
+
+        //Convert hex to decimal
+        std::stringstream hex(length_hex);
+        int characters;
+        hex >> std::hex >> characters;
+
+        LogPrint("bench", "CreateOpReturnIndexes - Number of characters to count: %d\n", characters);
+        int length = characters * 2;
+        LogPrint("bench", "CreateOpReturnIndexes - Length: %d\n", length);
+
+        std::string dataParsed = substring_asm.substr(parsed, length);
+        LogPrint("bench", "CreateOpReturnIndexes - OP_RETURN data parsed: %s\n", dataParsed);
+        parsed = parsed + length;
+        opreturnsData.push_back(dataParsed);
+    }
+
+    for (std::vector<std::string>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
+    {
+        std::string opreturnData = *it;
+        LogPrint("bench", "CreateOpReturnIndexes - Adding OP_RETURN data %s\n", opreturnData);
+        std::string txihash;
+        std::string delimiter(",");
+
+        if (pblocktree->ReadOpReturnIndex(opreturnData, txihash))
+        {
+            LogPrintf("CreateOpReturnIndexes - Index '%s' already exists with value: '%s'\n", opreturnData, txihash);
+            txihash = txihash + delimiter + txiid;
+        }
+        else
+        {
+            txihash = txiid;
+        }
+
+        vPubKeyPos.push_back(std::make_pair(opreturnData, txihash));
+    }
+}
+
 bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& view, bool fJustCheck)
 {
     const CChainParams& chainparams = Params();
@@ -2462,6 +2567,11 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     CDiskTxPos pos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
     vPos.reserve(block.vtx.size());
+
+    CDiskTxPos pubKeyPos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
+    std::vector<std::pair<std::string, std::string> > vPubKeyPos;
+    vPubKeyPos.reserve(block.vtx.size());
+    
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
     std::vector<std::pair<CAddressIndexKey, CAmount> > addressIndex;
     std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > addressUnspentIndex;
@@ -2592,7 +2702,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
+
+        if (fOpReturnIndex) {
+            for (unsigned int k = 0; k < tx.vout.size(); k++) {
+                const CTxOut& out = tx.vout[k];
+                LogPrint("bench", "CreateOpReturnIndexes - Unspendable: %b\n", out.scriptPubKey.IsUnspendable());
+                if (out.scriptPubKey.IsUnspendable())
+                    CreateOpReturnIndexes(out.scriptPubKey, txhash.ToString(), vPubKeyPos);
+            }
+        }
     }
+
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
     LogPrint("bench", "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n", (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(), nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs-1), nTimeConnect * 0.000001);
 
@@ -2633,6 +2753,10 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     if (fTxIndex)
         if (!pblocktree->WriteTxIndex(vPos))
             return AbortNode(state, "Failed to write transaction index");
+
+    if (fOpReturnIndex)    
+        if (!pblocktree->WriteOpReturnIndex(vPubKeyPos))
+            return AbortNode(state, "Failed to write opreturn  index");
 
     if (fAddressIndex) {
         if (!pblocktree->WriteAddressIndex(addressIndex)) {
@@ -4060,6 +4184,10 @@ bool static LoadBlockIndexDB()
     pblocktree->ReadFlag("txindex", fTxIndex);
     LogPrintf("%s: transaction index %s\n", __func__, fTxIndex ? "enabled" : "disabled");
 
+    // Check whether we have an opreturn index
+    pblocktree->ReadFlag("opreturnindex", fOpReturnIndex);
+    LogPrintf("%s: opreturn index %s\n", __func__, fOpReturnIndex ? "enabled" : "disabled");
+
     // Check whether we have an address index
     pblocktree->ReadFlag("addressindex", fAddressIndex);
     LogPrintf("%s: address index %s\n", __func__, fAddressIndex ? "enabled" : "disabled");
@@ -4232,6 +4360,10 @@ bool InitBlockIndex(const CChainParams& chainparams)
     // Use the provided setting for -txindex in the new database
     fTxIndex = GetBoolArg("-txindex", DEFAULT_TXINDEX);
     pblocktree->WriteFlag("txindex", fTxIndex);
+
+    // Use the provided setting for -opreturnindex in the new database
+    fOpReturnIndex = GetBoolArg("-opreturnindex", DEFAULT_OPRETURNINDEX);
+    pblocktree->WriteFlag("opreturnindex", fOpReturnIndex);
 
     // Use the provided setting for -addressindex in the new database
     fAddressIndex = GetBoolArg("-addressindex", DEFAULT_ADDRESSINDEX);

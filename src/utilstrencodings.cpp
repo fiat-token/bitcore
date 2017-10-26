@@ -662,3 +662,9 @@ bool ParseFixedPoint(const std::string &val, int decimals, int64_t *amount_out)
     return true;
 }
 
+
+bool str_in_array(const std::string &value, const std::vector<std::string> &array)
+{
+    return std::find(array.begin(), array.end(), value) != array.end();
+}
+
