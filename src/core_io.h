@@ -28,5 +28,6 @@ extern std::string FormatScript(const CScript& script);
 extern std::string EncodeHexTx(const CTransaction& tx);
 extern void ScriptPubKeyToUniv(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
 extern void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry);
+extern std::string EncodeHexBlock(const CBlock& block);
 
 #endif // BITCOIN_CORE_IO_H

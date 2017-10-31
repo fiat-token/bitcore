@@ -194,6 +194,8 @@ extern UniValue importwallet(const UniValue& params, bool fHelp);
 extern UniValue getgenerate(const UniValue& params, bool fHelp); // in rpcmining.cpp
 extern UniValue setgenerate(const UniValue& params, bool fHelp);
 extern UniValue generate(const UniValue& params, bool fHelp);
+extern UniValue combineblocksigs(const UniValue& params, bool fHelp);
+extern UniValue getnewblockhex(const UniValue& params, bool fHelp);
 extern UniValue getnetworkhashps(const UniValue& params, bool fHelp);
 extern UniValue getmininginfo(const UniValue& params, bool fHelp);
 extern UniValue prioritisetransaction(const UniValue& params, bool fHelp);
@@ -243,6 +245,7 @@ extern UniValue getblockchaininfo(const UniValue& params, bool fHelp);
 extern UniValue getnetworkinfo(const UniValue& params, bool fHelp);
 extern UniValue setmocktime(const UniValue& params, bool fHelp);
 extern UniValue resendwallettransactions(const UniValue& params, bool fHelp);
+extern UniValue signblock(const UniValue& params, bool fHelp);
 
 extern UniValue getrawtransaction(const UniValue& params, bool fHelp); // in rcprawtransaction.cpp
 extern UniValue listunspent(const UniValue& params, bool fHelp);

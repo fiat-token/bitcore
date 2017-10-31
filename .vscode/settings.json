@@ -20,6 +20,7 @@
         "*.ipp": "cpp",
         "system_error": "cpp",
         "chrono": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "iosfwd": "cpp"
     }
 }

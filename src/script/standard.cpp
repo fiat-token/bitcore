@@ -31,6 +31,8 @@ const char* GetTxnOutputType(txnouttype t)
     case TX_SCRIPTHASH: return "scripthash";
     case TX_MULTISIG: return "multisig";
     case TX_NULL_DATA: return "nulldata";
+    case TX_TRUE: return "true";
+    case TX_FEE: return "fee";
     }
     return NULL;
 }
@@ -66,6 +68,12 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         return true;
     }
 
+    if (scriptPubKey == CScript())
+    {
+        typeRet = TX_FEE;
+        return true;
+    }
+
     // Provably prunable, data-carrying output
     //
     // So long as script passes the IsUnspendable() test and all but the first
@@ -73,6 +81,18 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
     // script.
     if (scriptPubKey.size() >= 1 && scriptPubKey[0] == OP_RETURN && scriptPubKey.IsPushOnly(scriptPubKey.begin()+1)) {
         typeRet = TX_NULL_DATA;
+        return true;
+    }
+
+    if (scriptPubKey == CScript() << OP_TRUE) 
+    {
+        typeRet = TX_TRUE;
+        return true;
+    }
+
+    if (scriptPubKey == CScript() << OP_TRUE) 
+    {
+        typeRet = TX_TRUE;
         return true;
     }
 
@@ -198,7 +218,7 @@ bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vecto
     vector<valtype> vSolutions;
     if (!Solver(scriptPubKey, typeRet, vSolutions))
         return false;
-    if (typeRet == TX_NULL_DATA){
+    if (typeRet == TX_NULL_DATA || typeRet == TX_FEE){
         // This is data, not addresses
         return false;
     }

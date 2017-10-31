@@ -304,6 +304,8 @@ static const CRPCCommand vRPCCommands[] =
     { "generating",         "getgenerate",            &getgenerate,            true  },
     { "generating",         "setgenerate",            &setgenerate,            true  },
     { "generating",         "generate",               &generate,               true  },
+    { "generating",         "combineblocksigs",       &combineblocksigs,       true  },
+    { "generating",         "getnewblockhex",         &getnewblockhex,         true  },
 
     /* Raw transactions */
     { "rawtransactions",    "createrawtransaction",   &createrawtransaction,   true  },
@@ -386,7 +388,11 @@ static const CRPCCommand vRPCCommands[] =
     { "wallet",             "walletlock",             &walletlock,             true  },
     { "wallet",             "walletpassphrasechange", &walletpassphrasechange, true  },
     { "wallet",             "walletpassphrase",       &walletpassphrase,       true  },
+
+    /* Sign block */
+    { "wallet",             "signblock",              &signblock,              true  }
 #endif // ENABLE_WALLET
+
 };
 
 CRPCTable::CRPCTable()

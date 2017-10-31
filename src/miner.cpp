@@ -66,7 +66,7 @@ int64_t UpdateTime(CBlockHeader* pblock, const Consensus::Params& consensusParam
 
     // Updating time can change work required on testnet:
     if (consensusParams.fPowAllowMinDifficultyBlocks)
-        pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, consensusParams);
+        ResetChallenge(*pblock, *pindexPrev, consensusParams);
 
     return nNewTime - nOldTime;
 }
@@ -287,6 +287,9 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
         pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
         pblock->nNonce         = 0;
+        pblock->nHeight        = nHeight;
+        ResetChallenge(*pblock, *pindexPrev, chainparams.GetConsensus());
+        ResetProof(*pblock);
         pblocktemplate->vTxSigOps[0] = GetLegacySigOpCount(pblock->vtx[0]);
 
         CValidationState state;

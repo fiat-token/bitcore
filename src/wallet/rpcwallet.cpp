@@ -18,6 +18,8 @@
 #include "utilmoneystr.h"
 #include "wallet.h"
 #include "walletdb.h"
+#include "pow.h"
+#include "consensus/validation.h"
 
 #include <stdint.h>
 
@@ -561,6 +563,54 @@ UniValue signmessage(const UniValue& params, bool fHelp)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Sign failed");
 
     return EncodeBase64(&vchSig[0], vchSig.size());
+}
+
+UniValue signblock(const UniValue& params, bool fHelp)
+{
+    if (!EnsureWalletIsAvailable(fHelp))
+        return NullUniValue;
+
+    if (fHelp || params.size() != 1) {
+        
+        throw std::runtime_error(
+            "signblock \"blockhex\"\n"
+            "\nSigns a block proposal, checking that it would be accepted first\n"
+            "\nArguments:\n"
+            "1. \"blockhex\"    (string, required) The hex-encoded block from getnewblockhex\n"
+            "\nResult\n"
+            " sig      (hex) The signature\n"
+            "\nExamples:\n"
+            + HelpExampleCli("signblock", "0000002018c6f2f913f9902aeab...5ca501f77be96de63f609010000000000000000015100000000")
+        );
+    }
+
+    CBlock block;
+    if (!DecodeHexBlk(block, params[0].get_str()))
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
+
+    LOCK(cs_main);
+
+    uint256 hash = block.GetHash();
+    BlockMap::iterator mi = mapBlockIndex.find(hash);
+    if (mi != mapBlockIndex.end())
+        throw JSONRPCError(RPC_VERIFY_ERROR, "already have block");
+
+    CBlockIndex* const pindexPrev = chainActive.Tip();
+    // TestBlockValidity only supports blocks built on the current Tip
+    if (block.hashPrevBlock != pindexPrev->GetBlockHash())
+        throw JSONRPCError(RPC_VERIFY_ERROR, "proposal was not based on our best chain");
+
+    CValidationState validationState;
+    if (!TestBlockValidity(validationState, Params(), block, pindexPrev, false, true) || !validationState.IsValid()) {
+        std::string strRejectReason = validationState.GetRejectReason();
+        if (strRejectReason.empty())
+            throw JSONRPCError(RPC_VERIFY_ERROR, validationState.IsInvalid() ? "Block proposal was invalid" : "Error checking block proposal");
+        throw JSONRPCError(RPC_VERIFY_ERROR, strRejectReason);
+    }
+
+    block.proof.solution = CScript();
+    MaybeGenerateProof(&block, pwalletMain);
+    return HexStr(block.proof.solution.begin(), block.proof.solution.end());
 }
 
 UniValue getreceivedbyaddress(const UniValue& params, bool fHelp)

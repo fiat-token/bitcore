@@ -10,6 +10,8 @@
 #include "primitives/block.h"
 #include "uint256.h"
 #include "util.h"
+#include "wallet/wallet.h"
+#include "script/generic.h"
 
 unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock, const Consensus::Params& params)
 {
@@ -103,19 +105,49 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
     return true;
 }
 
+bool CheckProof(const CBlockHeader& block, const Consensus::Params& params)
+{
+    if (block.GetHash() == params.hashGenesisBlock)
+       return true;
+    return GenericVerifyScript(block.proof.solution, block.proof.challenge, SCRIPT_VERIFY_P2SH, block);
+}
+
+bool MaybeGenerateProof(CBlockHeader *pblock, CWallet *pwallet)
+{
+#ifdef ENABLE_WALLET
+    CScript solution(pblock->proof.solution);
+    bool res = GenericSignScript(*pwallet, *pblock, pblock->proof.challenge, solution);
+    pblock->proof.solution = solution;
+    return res;
+#endif
+    return false;
+}
+
+void ResetProof(CBlockHeader& block)
+{
+    block.proof.solution.clear();
+}
+
+bool CheckChallenge(const CBlockHeader& block, const CBlockIndex& indexLast, const Consensus::Params& params)
+{
+    return block.proof.challenge == indexLast.proof.challenge;
+}
+
+void ResetChallenge(CBlockHeader& block, const CBlockIndex& indexLast, const Consensus::Params& params)
+{
+    block.proof.challenge = indexLast.proof.challenge;
+}
+
+CScript CombineBlockSignatures(const CBlockHeader& header, const CScript& scriptSig1, const CScript& scriptSig2)
+{
+    CScript sig1(scriptSig1);
+    CScript sig2(scriptSig2);
+    return GenericCombineSignatures(header.proof.challenge, header, sig1, sig2);
+}
+
 arith_uint256 GetBlockProof(const CBlockIndex& block)
 {
-    arith_uint256 bnTarget;
-    bool fNegative;
-    bool fOverflow;
-    bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow);
-    if (fNegative || fOverflow || bnTarget == 0)
-        return 0;
-    // We need to compute 2**256 / (bnTarget+1), but we can't represent 2**256
-    // as it's too large for a arith_uint256. However, as 2**256 is at least as large
-    // as bnTarget+1, it is equal to ((2**256 - bnTarget - 1) / (bnTarget+1)) + 1,
-    // or ~bnTarget / (nTarget+1) + 1.
-    return (~bnTarget / (bnTarget + 1)) + 1;
+    return 1;
 }
 
 int64_t GetBlockProofEquivalentTime(const CBlockIndex& to, const CBlockIndex& from, const CBlockIndex& tip, const Consensus::Params& params)

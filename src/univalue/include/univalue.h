@@ -12,9 +12,275 @@
 #include <vector>
 #include <map>
 #include <cassert>
+#include <string.h>
 
 #include <sstream>        // .get_int64()
 #include <utility>        // std::pair
+
+enum jtokentype {
+    JTOK_ERR        = -1,
+    JTOK_NONE       = 0,                           // eof
+    JTOK_OBJ_OPEN,
+    JTOK_OBJ_CLOSE,
+    JTOK_ARR_OPEN,
+    JTOK_ARR_CLOSE,
+    JTOK_COLON,
+    JTOK_COMMA,
+    JTOK_KW_NULL,
+    JTOK_KW_TRUE,
+    JTOK_KW_FALSE,
+    JTOK_NUMBER,
+    JTOK_STRING,
+};
+
+
+static inline bool json_isspace(int ch)
+{
+    switch (ch) {
+    case 0x20:
+    case 0x09:
+    case 0x0a:
+    case 0x0d:
+        return true;
+
+    default:
+        return false;
+    }
+
+    // not reached
+}
+
+static bool json_isdigit(int ch)
+{
+    return ((ch >= '0') && (ch <= '9'));
+}
+
+static const char *hatoui(const char *first, const char *last,
+                          unsigned int& out)
+{
+    unsigned int result = 0;
+    for (; first != last; ++first)
+    {
+        int digit;
+        if (json_isdigit(*first))
+            digit = *first - '0';
+
+        else if (*first >= 'a' && *first <= 'f')
+            digit = *first - 'a' + 10;
+
+        else if (*first >= 'A' && *first <= 'F')
+            digit = *first - 'A' + 10;
+
+        else
+            break;
+
+        result = 16 * result + digit;
+    }
+    out = result;
+
+    return first;
+}
+
+
+static enum jtokentype getJsonToken(std::string& tokenVal, unsigned int& consumed,
+                            const char *raw)
+{
+    tokenVal.clear();
+    consumed = 0;
+
+    const char *rawStart = raw;
+
+    while ((*raw) && (json_isspace(*raw)))             // skip whitespace
+        raw++;
+
+    switch (*raw) {
+
+    case 0:
+        return JTOK_NONE;
+
+    case '{':
+        raw++;
+        consumed = (raw - rawStart);
+        return JTOK_OBJ_OPEN;
+    case '}':
+        raw++;
+        consumed = (raw - rawStart);
+        return JTOK_OBJ_CLOSE;
+    case '[':
+        raw++;
+        consumed = (raw - rawStart);
+        return JTOK_ARR_OPEN;
+    case ']':
+        raw++;
+        consumed = (raw - rawStart);
+        return JTOK_ARR_CLOSE;
+
+    case ':':
+        raw++;
+        consumed = (raw - rawStart);
+        return JTOK_COLON;
+    case ',':
+        raw++;
+        consumed = (raw - rawStart);
+        return JTOK_COMMA;
+
+    case 'n':
+    case 't':
+    case 'f':
+        if (!strncmp(raw, "null", 4)) {
+            raw += 4;
+            consumed = (raw - rawStart);
+            return JTOK_KW_NULL;
+        } else if (!strncmp(raw, "true", 4)) {
+            raw += 4;
+            consumed = (raw - rawStart);
+            return JTOK_KW_TRUE;
+        } else if (!strncmp(raw, "false", 5)) {
+            raw += 5;
+            consumed = (raw - rawStart);
+            return JTOK_KW_FALSE;
+        } else
+            return JTOK_ERR;
+
+    case '-':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9': {
+        // part 1: int
+        std::string numStr;
+
+        const char *first = raw;
+
+        const char *firstDigit = first;
+        if (!json_isdigit(*firstDigit))
+            firstDigit++;
+        if ((*firstDigit == '0') && json_isdigit(firstDigit[1]))
+            return JTOK_ERR;
+
+        numStr += *raw;                       // copy first char
+        raw++;
+
+        if ((*first == '-') && (!json_isdigit(*raw)))
+            return JTOK_ERR;
+
+        while ((*raw) && json_isdigit(*raw)) {     // copy digits
+            numStr += *raw;
+            raw++;
+        }
+
+        // part 2: frac
+        if (*raw == '.') {
+            numStr += *raw;                   // copy .
+            raw++;
+
+            if (!json_isdigit(*raw))
+                return JTOK_ERR;
+            while ((*raw) && json_isdigit(*raw)) { // copy digits
+                numStr += *raw;
+                raw++;
+            }
+        }
+
+        // part 3: exp
+        if (*raw == 'e' || *raw == 'E') {
+            numStr += *raw;                   // copy E
+            raw++;
+
+            if (*raw == '-' || *raw == '+') { // copy +/-
+                numStr += *raw;
+                raw++;
+            }
+
+            if (!json_isdigit(*raw))
+                return JTOK_ERR;
+            while ((*raw) && json_isdigit(*raw)) { // copy digits
+                numStr += *raw;
+                raw++;
+            }
+        }
+
+        tokenVal = numStr;
+        consumed = (raw - rawStart);
+        return JTOK_NUMBER;
+        }
+
+    case '"': {
+        raw++;                                // skip "
+
+        std::string valStr;
+
+        while (*raw) {
+            if (*raw < 0x20)
+                return JTOK_ERR;
+
+            else if (*raw == '\\') {
+                raw++;                        // skip backslash
+
+                switch (*raw) {
+                case '"':  valStr += "\""; break;
+                case '\\': valStr += "\\"; break;
+                case '/':  valStr += "/"; break;
+                case 'b':  valStr += "\b"; break;
+                case 'f':  valStr += "\f"; break;
+                case 'n':  valStr += "\n"; break;
+                case 'r':  valStr += "\r"; break;
+                case 't':  valStr += "\t"; break;
+
+                case 'u': {
+                    unsigned int codepoint;
+                    if (hatoui(raw + 1, raw + 1 + 4, codepoint) !=
+                               raw + 1 + 4)
+                        return JTOK_ERR;
+
+                    if (codepoint <= 0x7f)
+                        valStr.push_back((char)codepoint);
+                    else if (codepoint <= 0x7FF) {
+                        valStr.push_back((char)(0xC0 | (codepoint >> 6)));
+                        valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
+                    } else if (codepoint <= 0xFFFF) {
+                        valStr.push_back((char)(0xE0 | (codepoint >> 12)));
+                        valStr.push_back((char)(0x80 | ((codepoint >> 6) & 0x3F)));
+                        valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
+                    }
+
+                    raw += 4;
+                    break;
+                    }
+                default:
+                    return JTOK_ERR;
+
+                }
+
+                raw++;                        // skip esc'd char
+            }
+
+            else if (*raw == '"') {
+                raw++;                        // skip "
+                break;                        // stop scanning
+            }
+
+            else {
+                valStr += *raw;
+                raw++;
+            }
+        }
+
+        tokenVal = valStr;
+        consumed = (raw - rawStart);
+        return JTOK_STRING;
+        }
+
+    default:
+        return JTOK_ERR;
+    }
+}
 
 class UniValue {
 public:
@@ -49,13 +315,51 @@ public:
     }
     ~UniValue() {}
 
-    void clear();
+    void clear()
+    {
+        typ = VNULL;
+        val.clear();
+        keys.clear();
+        values.clear();
+    }
 
     bool setNull();
     bool setBool(bool val);
-    bool setNumStr(const std::string& val);
-    bool setInt(uint64_t val);
-    bool setInt(int64_t val);
+    bool validNumStr(const std::string& s)
+    {
+        std::string tokenVal;
+        unsigned int consumed;
+        enum jtokentype tt = getJsonToken(tokenVal, consumed, s.c_str());
+        return (tt == JTOK_NUMBER);
+    }
+    bool setNumStr(const std::string& val_)
+    {
+        if (!validNumStr(val_))
+            return false;
+
+        clear();
+        typ = VNUM;
+        val = val_;
+        return true;
+    }
+    bool setInt(uint64_t val)
+    {
+        std::string s;
+        std::ostringstream oss;
+
+        oss << val;
+
+        return setNumStr(oss.str());
+    }
+    bool setInt(int64_t val)
+    {
+        std::string s;
+        std::ostringstream oss;
+
+        oss << val;
+
+        return setNumStr(oss.str());
+    }
     bool setInt(int val) { return setInt((int64_t)val); }
     bool setFloat(double val);
     bool setStr(const std::string& val);
@@ -83,7 +387,14 @@ public:
     bool isArray() const { return (typ == VARR); }
     bool isObject() const { return (typ == VOBJ); }
 
-    bool push_back(const UniValue& val);
+    bool push_back(const UniValue& val)
+    {
+        if (typ != VARR)
+            return false;
+
+        values.push_back(val);
+        return true;
+    }
     bool push_back(const std::string& val_) {
         UniValue tmpVal(VSTR, val_);
         return push_back(tmpVal);
@@ -94,7 +405,15 @@ public:
     }
     bool push_backV(const std::vector<UniValue>& vec);
 
-    bool pushKV(const std::string& key, const UniValue& val);
+    bool pushKV(const std::string& key, const UniValue& val)
+    {
+        if (typ != VOBJ)
+            return false;
+
+        keys.push_back(key);
+        values.push_back(val);
+        return true;
+    }
     bool pushKV(const std::string& key, const std::string& val) {
         UniValue tmpVal(VSTR, val);
         return pushKV(key, tmpVal);
@@ -223,24 +542,6 @@ static inline std::pair<std::string,UniValue> Pair(std::string key, const UniVal
     return std::make_pair(key, uVal);
 }
 
-enum jtokentype {
-    JTOK_ERR        = -1,
-    JTOK_NONE       = 0,                           // eof
-    JTOK_OBJ_OPEN,
-    JTOK_OBJ_CLOSE,
-    JTOK_ARR_OPEN,
-    JTOK_ARR_CLOSE,
-    JTOK_COLON,
-    JTOK_COMMA,
-    JTOK_KW_NULL,
-    JTOK_KW_TRUE,
-    JTOK_KW_FALSE,
-    JTOK_NUMBER,
-    JTOK_STRING,
-};
-
-extern enum jtokentype getJsonToken(std::string& tokenVal,
-                                    unsigned int& consumed, const char *raw);
 extern const char *uvTypeName(UniValue::VType t);
 
 static inline bool jsonTokenIsValue(enum jtokentype jtt)
@@ -251,22 +552,6 @@ static inline bool jsonTokenIsValue(enum jtokentype jtt)
     case JTOK_KW_FALSE:
     case JTOK_NUMBER:
     case JTOK_STRING:
-        return true;
-
-    default:
-        return false;
-    }
-
-    // not reached
-}
-
-static inline bool json_isspace(int ch)
-{
-    switch (ch) {
-    case 0x20:
-    case 0x09:
-    case 0x0a:
-    case 0x0d:
         return true;
 
     default:

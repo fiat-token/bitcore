@@ -9,237 +9,237 @@
 
 using namespace std;
 
-static bool json_isdigit(int ch)
-{
-    return ((ch >= '0') && (ch <= '9'));
-}
+// static bool json_isdigit(int ch)
+// {
+//     return ((ch >= '0') && (ch <= '9'));
+// }
 
 // convert hexadecimal string to unsigned integer
-static const char *hatoui(const char *first, const char *last,
-                          unsigned int& out)
-{
-    unsigned int result = 0;
-    for (; first != last; ++first)
-    {
-        int digit;
-        if (json_isdigit(*first))
-            digit = *first - '0';
+// static const char *hatoui(const char *first, const char *last,
+//                           unsigned int& out)
+// {
+//     unsigned int result = 0;
+//     for (; first != last; ++first)
+//     {
+//         int digit;
+//         if (json_isdigit(*first))
+//             digit = *first - '0';
 
-        else if (*first >= 'a' && *first <= 'f')
-            digit = *first - 'a' + 10;
+//         else if (*first >= 'a' && *first <= 'f')
+//             digit = *first - 'a' + 10;
 
-        else if (*first >= 'A' && *first <= 'F')
-            digit = *first - 'A' + 10;
+//         else if (*first >= 'A' && *first <= 'F')
+//             digit = *first - 'A' + 10;
 
-        else
-            break;
+//         else
+//             break;
 
-        result = 16 * result + digit;
-    }
-    out = result;
+//         result = 16 * result + digit;
+//     }
+//     out = result;
 
-    return first;
-}
+//     return first;
+// }
 
-enum jtokentype getJsonToken(string& tokenVal, unsigned int& consumed,
-                            const char *raw)
-{
-    tokenVal.clear();
-    consumed = 0;
+// enum jtokentype getJsonToken(string& tokenVal, unsigned int& consumed,
+//                             const char *raw)
+// {
+//     tokenVal.clear();
+//     consumed = 0;
 
-    const char *rawStart = raw;
+//     const char *rawStart = raw;
 
-    while ((*raw) && (json_isspace(*raw)))             // skip whitespace
-        raw++;
+//     while ((*raw) && (json_isspace(*raw)))             // skip whitespace
+//         raw++;
 
-    switch (*raw) {
+//     switch (*raw) {
 
-    case 0:
-        return JTOK_NONE;
+//     case 0:
+//         return JTOK_NONE;
 
-    case '{':
-        raw++;
-        consumed = (raw - rawStart);
-        return JTOK_OBJ_OPEN;
-    case '}':
-        raw++;
-        consumed = (raw - rawStart);
-        return JTOK_OBJ_CLOSE;
-    case '[':
-        raw++;
-        consumed = (raw - rawStart);
-        return JTOK_ARR_OPEN;
-    case ']':
-        raw++;
-        consumed = (raw - rawStart);
-        return JTOK_ARR_CLOSE;
+//     case '{':
+//         raw++;
+//         consumed = (raw - rawStart);
+//         return JTOK_OBJ_OPEN;
+//     case '}':
+//         raw++;
+//         consumed = (raw - rawStart);
+//         return JTOK_OBJ_CLOSE;
+//     case '[':
+//         raw++;
+//         consumed = (raw - rawStart);
+//         return JTOK_ARR_OPEN;
+//     case ']':
+//         raw++;
+//         consumed = (raw - rawStart);
+//         return JTOK_ARR_CLOSE;
 
-    case ':':
-        raw++;
-        consumed = (raw - rawStart);
-        return JTOK_COLON;
-    case ',':
-        raw++;
-        consumed = (raw - rawStart);
-        return JTOK_COMMA;
+//     case ':':
+//         raw++;
+//         consumed = (raw - rawStart);
+//         return JTOK_COLON;
+//     case ',':
+//         raw++;
+//         consumed = (raw - rawStart);
+//         return JTOK_COMMA;
 
-    case 'n':
-    case 't':
-    case 'f':
-        if (!strncmp(raw, "null", 4)) {
-            raw += 4;
-            consumed = (raw - rawStart);
-            return JTOK_KW_NULL;
-        } else if (!strncmp(raw, "true", 4)) {
-            raw += 4;
-            consumed = (raw - rawStart);
-            return JTOK_KW_TRUE;
-        } else if (!strncmp(raw, "false", 5)) {
-            raw += 5;
-            consumed = (raw - rawStart);
-            return JTOK_KW_FALSE;
-        } else
-            return JTOK_ERR;
+//     case 'n':
+//     case 't':
+//     case 'f':
+//         if (!strncmp(raw, "null", 4)) {
+//             raw += 4;
+//             consumed = (raw - rawStart);
+//             return JTOK_KW_NULL;
+//         } else if (!strncmp(raw, "true", 4)) {
+//             raw += 4;
+//             consumed = (raw - rawStart);
+//             return JTOK_KW_TRUE;
+//         } else if (!strncmp(raw, "false", 5)) {
+//             raw += 5;
+//             consumed = (raw - rawStart);
+//             return JTOK_KW_FALSE;
+//         } else
+//             return JTOK_ERR;
 
-    case '-':
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9': {
-        // part 1: int
-        string numStr;
+//     case '-':
+//     case '0':
+//     case '1':
+//     case '2':
+//     case '3':
+//     case '4':
+//     case '5':
+//     case '6':
+//     case '7':
+//     case '8':
+//     case '9': {
+//         // part 1: int
+//         string numStr;
 
-        const char *first = raw;
+//         const char *first = raw;
 
-        const char *firstDigit = first;
-        if (!json_isdigit(*firstDigit))
-            firstDigit++;
-        if ((*firstDigit == '0') && json_isdigit(firstDigit[1]))
-            return JTOK_ERR;
+//         const char *firstDigit = first;
+//         if (!json_isdigit(*firstDigit))
+//             firstDigit++;
+//         if ((*firstDigit == '0') && json_isdigit(firstDigit[1]))
+//             return JTOK_ERR;
 
-        numStr += *raw;                       // copy first char
-        raw++;
+//         numStr += *raw;                       // copy first char
+//         raw++;
 
-        if ((*first == '-') && (!json_isdigit(*raw)))
-            return JTOK_ERR;
+//         if ((*first == '-') && (!json_isdigit(*raw)))
+//             return JTOK_ERR;
 
-        while ((*raw) && json_isdigit(*raw)) {     // copy digits
-            numStr += *raw;
-            raw++;
-        }
+//         while ((*raw) && json_isdigit(*raw)) {     // copy digits
+//             numStr += *raw;
+//             raw++;
+//         }
 
-        // part 2: frac
-        if (*raw == '.') {
-            numStr += *raw;                   // copy .
-            raw++;
+//         // part 2: frac
+//         if (*raw == '.') {
+//             numStr += *raw;                   // copy .
+//             raw++;
 
-            if (!json_isdigit(*raw))
-                return JTOK_ERR;
-            while ((*raw) && json_isdigit(*raw)) { // copy digits
-                numStr += *raw;
-                raw++;
-            }
-        }
+//             if (!json_isdigit(*raw))
+//                 return JTOK_ERR;
+//             while ((*raw) && json_isdigit(*raw)) { // copy digits
+//                 numStr += *raw;
+//                 raw++;
+//             }
+//         }
 
-        // part 3: exp
-        if (*raw == 'e' || *raw == 'E') {
-            numStr += *raw;                   // copy E
-            raw++;
+//         // part 3: exp
+//         if (*raw == 'e' || *raw == 'E') {
+//             numStr += *raw;                   // copy E
+//             raw++;
 
-            if (*raw == '-' || *raw == '+') { // copy +/-
-                numStr += *raw;
-                raw++;
-            }
+//             if (*raw == '-' || *raw == '+') { // copy +/-
+//                 numStr += *raw;
+//                 raw++;
+//             }
 
-            if (!json_isdigit(*raw))
-                return JTOK_ERR;
-            while ((*raw) && json_isdigit(*raw)) { // copy digits
-                numStr += *raw;
-                raw++;
-            }
-        }
+//             if (!json_isdigit(*raw))
+//                 return JTOK_ERR;
+//             while ((*raw) && json_isdigit(*raw)) { // copy digits
+//                 numStr += *raw;
+//                 raw++;
+//             }
+//         }
 
-        tokenVal = numStr;
-        consumed = (raw - rawStart);
-        return JTOK_NUMBER;
-        }
+//         tokenVal = numStr;
+//         consumed = (raw - rawStart);
+//         return JTOK_NUMBER;
+//         }
 
-    case '"': {
-        raw++;                                // skip "
+//     case '"': {
+//         raw++;                                // skip "
 
-        string valStr;
+//         string valStr;
 
-        while (*raw) {
-            if (*raw < 0x20)
-                return JTOK_ERR;
+//         while (*raw) {
+//             if (*raw < 0x20)
+//                 return JTOK_ERR;
 
-            else if (*raw == '\\') {
-                raw++;                        // skip backslash
+//             else if (*raw == '\\') {
+//                 raw++;                        // skip backslash
 
-                switch (*raw) {
-                case '"':  valStr += "\""; break;
-                case '\\': valStr += "\\"; break;
-                case '/':  valStr += "/"; break;
-                case 'b':  valStr += "\b"; break;
-                case 'f':  valStr += "\f"; break;
-                case 'n':  valStr += "\n"; break;
-                case 'r':  valStr += "\r"; break;
-                case 't':  valStr += "\t"; break;
+//                 switch (*raw) {
+//                 case '"':  valStr += "\""; break;
+//                 case '\\': valStr += "\\"; break;
+//                 case '/':  valStr += "/"; break;
+//                 case 'b':  valStr += "\b"; break;
+//                 case 'f':  valStr += "\f"; break;
+//                 case 'n':  valStr += "\n"; break;
+//                 case 'r':  valStr += "\r"; break;
+//                 case 't':  valStr += "\t"; break;
 
-                case 'u': {
-                    unsigned int codepoint;
-                    if (hatoui(raw + 1, raw + 1 + 4, codepoint) !=
-                               raw + 1 + 4)
-                        return JTOK_ERR;
+//                 case 'u': {
+//                     unsigned int codepoint;
+//                     if (hatoui(raw + 1, raw + 1 + 4, codepoint) !=
+//                                raw + 1 + 4)
+//                         return JTOK_ERR;
 
-                    if (codepoint <= 0x7f)
-                        valStr.push_back((char)codepoint);
-                    else if (codepoint <= 0x7FF) {
-                        valStr.push_back((char)(0xC0 | (codepoint >> 6)));
-                        valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
-                    } else if (codepoint <= 0xFFFF) {
-                        valStr.push_back((char)(0xE0 | (codepoint >> 12)));
-                        valStr.push_back((char)(0x80 | ((codepoint >> 6) & 0x3F)));
-                        valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
-                    }
+//                     if (codepoint <= 0x7f)
+//                         valStr.push_back((char)codepoint);
+//                     else if (codepoint <= 0x7FF) {
+//                         valStr.push_back((char)(0xC0 | (codepoint >> 6)));
+//                         valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
+//                     } else if (codepoint <= 0xFFFF) {
+//                         valStr.push_back((char)(0xE0 | (codepoint >> 12)));
+//                         valStr.push_back((char)(0x80 | ((codepoint >> 6) & 0x3F)));
+//                         valStr.push_back((char)(0x80 | (codepoint & 0x3F)));
+//                     }
 
-                    raw += 4;
-                    break;
-                    }
-                default:
-                    return JTOK_ERR;
+//                     raw += 4;
+//                     break;
+//                     }
+//                 default:
+//                     return JTOK_ERR;
 
-                }
+//                 }
 
-                raw++;                        // skip esc'd char
-            }
+//                 raw++;                        // skip esc'd char
+//             }
 
-            else if (*raw == '"') {
-                raw++;                        // skip "
-                break;                        // stop scanning
-            }
+//             else if (*raw == '"') {
+//                 raw++;                        // skip "
+//                 break;                        // stop scanning
+//             }
 
-            else {
-                valStr += *raw;
-                raw++;
-            }
-        }
+//             else {
+//                 valStr += *raw;
+//                 raw++;
+//             }
+//         }
 
-        tokenVal = valStr;
-        consumed = (raw - rawStart);
-        return JTOK_STRING;
-        }
+//         tokenVal = valStr;
+//         consumed = (raw - rawStart);
+//         return JTOK_STRING;
+//         }
 
-    default:
-        return JTOK_ERR;
-    }
-}
+//     default:
+//         return JTOK_ERR;
+//     }
+// }
 
 enum expect_bits {
     EXP_OBJ_NAME = (1U << 0),

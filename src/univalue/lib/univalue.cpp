@@ -77,13 +77,13 @@ using namespace std;
 
 const UniValue NullUniValue;
 
-void UniValue::clear()
-{
-    typ = VNULL;
-    val.clear();
-    keys.clear();
-    values.clear();
-}
+// void UniValue::clear()
+// {
+//     typ = VNULL;
+//     val.clear();
+//     keys.clear();
+//     values.clear();
+// }
 
 bool UniValue::setNull()
 {
@@ -100,44 +100,44 @@ bool UniValue::setBool(bool val_)
     return true;
 }
 
-static bool validNumStr(const string& s)
-{
-    string tokenVal;
-    unsigned int consumed;
-    enum jtokentype tt = getJsonToken(tokenVal, consumed, s.c_str());
-    return (tt == JTOK_NUMBER);
-}
+// static bool validNumStr(const string& s)
+// {
+//     string tokenVal;
+//     unsigned int consumed;
+//     enum jtokentype tt = getJsonToken(tokenVal, consumed, s.c_str());
+//     return (tt == JTOK_NUMBER);
+// }
 
-bool UniValue::setNumStr(const string& val_)
-{
-    if (!validNumStr(val_))
-        return false;
+// bool UniValue::setNumStr(const string& val_)
+// {
+//     if (!validNumStr(val_))
+//         return false;
 
-    clear();
-    typ = VNUM;
-    val = val_;
-    return true;
-}
+//     clear();
+//     typ = VNUM;
+//     val = val_;
+//     return true;
+// }
 
-bool UniValue::setInt(uint64_t val)
-{
-    string s;
-    ostringstream oss;
+// bool UniValue::setInt(uint64_t val)
+// {
+//     string s;
+//     ostringstream oss;
 
-    oss << val;
+//     oss << val;
 
-    return setNumStr(oss.str());
-}
+//     return setNumStr(oss.str());
+// }
 
-bool UniValue::setInt(int64_t val)
-{
-    string s;
-    ostringstream oss;
+// bool UniValue::setInt(int64_t val)
+// {
+//     string s;
+//     ostringstream oss;
 
-    oss << val;
+//     oss << val;
 
-    return setNumStr(oss.str());
-}
+//     return setNumStr(oss.str());
+// }
 
 bool UniValue::setFloat(double val)
 {
@@ -173,14 +173,14 @@ bool UniValue::setObject()
     return true;
 }
 
-bool UniValue::push_back(const UniValue& val)
-{
-    if (typ != VARR)
-        return false;
+// bool UniValue::push_back(const UniValue& val)
+// {
+//     if (typ != VARR)
+//         return false;
 
-    values.push_back(val);
-    return true;
-}
+//     values.push_back(val);
+//     return true;
+// }
 
 bool UniValue::push_backV(const std::vector<UniValue>& vec)
 {
@@ -192,15 +192,15 @@ bool UniValue::push_backV(const std::vector<UniValue>& vec)
     return true;
 }
 
-bool UniValue::pushKV(const std::string& key, const UniValue& val)
-{
-    if (typ != VOBJ)
-        return false;
+// bool UniValue::pushKV(const std::string& key, const UniValue& val)
+// {
+//     if (typ != VOBJ)
+//         return false;
 
-    keys.push_back(key);
-    values.push_back(val);
-    return true;
-}
+//     keys.push_back(key);
+//     values.push_back(val);
+//     return true;
+// }
 
 bool UniValue::pushKVs(const UniValue& obj)
 {
