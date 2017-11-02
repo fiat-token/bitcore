@@ -27,6 +27,7 @@
 
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/move/unique_ptr.hpp>
 
 #include <univalue.h>
 
@@ -865,8 +866,8 @@ UniValue getnewblockhex(const UniValue& params, bool fHelp)
             + HelpExampleCli("getnewblockhex", "")
         );
 
-    // boost::movelib::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), CScript() << OP_RETURN));
-    std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), CScript() << OP_RETURN));
+    boost::movelib::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), CScript() << OP_RETURN));
+    // std::unique_ptr<CBlockTemplate> pblocktemplate(CreateNewBlock(Params(), CScript() << OP_RETURN));
     if (!pblocktemplate.get())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Wallet keypool empty");
     {

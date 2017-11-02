@@ -76,6 +76,8 @@ public:
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
+    /** All coinbase outputs (after genesis) must be to this destination */
+    const CScript& CoinbaseDestination() const { return scriptCoinbaseDestination; }
 protected:
     CChainParams() {}
 
@@ -97,6 +99,7 @@ protected:
     bool fMineBlocksOnDemand;
     bool fTestnetToBeDeprecatedFieldRPC;
     CCheckpointData checkpointData;
+    CScript scriptCoinbaseDestination;
 };
 
 /**

@@ -84,7 +84,6 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
     txNew.vin.resize(1);
     txNew.vin[0].prevout.SetNull();
     txNew.vout.resize(1);
-    txNew.vout[0].scriptPubKey = scriptPubKeyIn;
 
     // Add dummy coinbase tx as first transaction
     pblock->vtx.push_back(CTransaction());
@@ -277,7 +276,19 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
         LogPrintf("CreateNewBlock(): total size %u txs: %u fees: %ld sigops %d\n", nBlockSize, nBlockTx, nFees, nBlockSigOps);
 
         // Compute final coinbase transaction.
-        txNew.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        // txNew.vout[0].nValue = nFees + GetBlockSubsidy(nHeight, chainparams.GetConsensus());
+        if (nHeight != 1) {
+            txNew.vout[0].scriptPubKey = CScript() << OP_RETURN;
+            txNew.vout[0].nValue = 0;
+        } else {
+            uint32_t rewardShards = 100;
+            txNew.vout.resize(rewardShards);
+            for (unsigned int i = 0; i < rewardShards; i++) {
+                txNew.vout[i].nValue = MAX_MONEY/rewardShards;
+                txNew.vout[i].scriptPubKey = chainparams.CoinbaseDestination();
+            }
+        }
+
         txNew.vin[0].scriptSig = CScript() << nHeight << OP_0;
         pblock->vtx[0] = txNew;
         pblocktemplate->vTxFees[0] = -nFees;
