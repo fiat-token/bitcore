@@ -188,9 +188,9 @@ public:
         
         // https://en.bitcoin.it/wiki/List_of_address_prefixes
         // https://github.com/libbitcoin/libbitcoin/wiki/Altcoin-Version-Mappings
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,65); // start with T
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,58); // start with Q
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,172); // AC
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111); // start with 'm' or 'n'
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196); // start with 2
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239); // EF
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >();// tprv
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >(); // tpub
 
@@ -267,9 +267,9 @@ public:
 
         // https://en.bitcoin.it/wiki/List_of_address_prefixes
         // https://github.com/libbitcoin/libbitcoin/wiki/Altcoin-Version-Mappings
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,65); // start with T
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,58); // start with Q
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,172); // AC
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111); // start with 'm' or 'n'
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196); // start with 2
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,239); // EF
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >(); // tprv
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >(); // tpub
 
