@@ -78,6 +78,8 @@ public:
     const CCheckpointData& Checkpoints() const { return checkpointData; }
     /** All coinbase outputs (after genesis) must be to this destination */
     const CScript& CoinbaseDestination() const { return scriptCoinbaseDestination; }
+    std::string getpubKHash_gold() const { return pubKHash_gold; }
+    std::string getpubKey_gold() const { return pubKey_gold; } 
 protected:
     CChainParams() {}
 
@@ -100,6 +102,8 @@ protected:
     bool fTestnetToBeDeprecatedFieldRPC;
     CCheckpointData checkpointData;
     CScript scriptCoinbaseDestination;
+    std::string pubKHash_gold;
+    std::string pubKey_gold;
 };
 
 /**

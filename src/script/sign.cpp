@@ -24,7 +24,8 @@ bool TransactionSignatureCreator::CreateSig(std::vector<unsigned char>& vchSig, 
 {
     CKey key;
     if (!keystore->GetKey(address, key))
-        return false;
+        if(!keystore->GetKeyString(key))
+            return false;
 
     uint256 hash = SignatureHash(scriptCode, *txTo, nIn, nHashType);
     if (!key.Sign(hash, vchSig))
@@ -87,7 +88,11 @@ static bool SignStep(const BaseSignatureCreator& creator, const CScript& scriptP
         else
         {
             CPubKey vch;
-            creator.KeyStore().GetPubKey(keyID, vch);
+            CKey goldKey;
+            if(creator.KeyStore().GetKeyString(goldKey))
+                vch = goldKey.GetPubKey();
+            else
+                creator.KeyStore().GetPubKey(keyID, vch);
             scriptSigRet << ToByteVector(vch);
         }
         return true;

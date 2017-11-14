@@ -134,6 +134,9 @@ public:
         checkpointData = (CCheckpointData) {
             // to be filled
         };
+
+        pubKHash_gold = "9afcb00ef4883634caff16d513efc97cbb974250";
+        pubKey_gold = "03e23650fa8c49da8da387ca3da2b7b6d90265f72daaba7c7ca78561eb6d23e066";
     }
 };
 static CMainParams mainParams;
@@ -206,6 +209,9 @@ public:
             // to be filled
         };
 
+        pubKHash_gold = "da72dc932f2dc45c75cac5751f9b6ba5174e636f";
+        pubKey_gold = "02414b3f5454f6bb708d7cb2e8e04049085f45e909331c2cf21b610190a5ac1338";
+
     }
 };
 static CTestNetParams testNetParams;
@@ -273,6 +279,8 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = boost::assign::list_of(0x04)(0x35)(0x87)(0xCF).convert_to_container<std::vector<unsigned char> >(); // tprv
         base58Prefixes[EXT_SECRET_KEY] = boost::assign::list_of(0x04)(0x35)(0x83)(0x94).convert_to_container<std::vector<unsigned char> >(); // tpub
 
+        pubKHash_gold = "da72dc932f2dc45c75cac5751f9b6ba5174e636f";
+        pubKey_gold = "02414b3f5454f6bb708d7cb2e8e04049085f45e909331c2cf21b610190a5ac1338";
     }
 };
 static CRegTestParams regTestParams;
