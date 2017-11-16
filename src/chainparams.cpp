@@ -51,7 +51,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, uint32_t nTime, const
  */
 static CBlock CreateGenesisBlock(uint32_t nTime, const CScript& scriptChallenge, uint32_t nNonce, uint32_t nBits, int32_t nVersion)
 {
-    const char* pszTimestamp = "Virtual Token birth";
+    const char* pszTimestamp = "Lo choc per gli Azzurri fuori dai Mondiali";
     return CreateGenesisBlock(pszTimestamp, nTime, scriptChallenge, nNonce, nBits, nVersion);
 }
 
@@ -148,7 +148,7 @@ class CTestNetParams : public CChainParams {
 public:
     CTestNetParams() {
         strNetworkID = "test";
-        const CScript scriptChallenge = CScript() << OP_1 << ParseHex("029c2ddd78a0f95f4e787554bfb4f74b2d7dcf40f79f443e5ef350e4a739470f39") << ParseHex("03a183d14e5acf94aa29c2a200c1bf3de571e83eb734d95bbae890cb3601f0c451") << ParseHex("02b255a2efbcf1582855fa4d9bb4a5f677668ed910bef61e986b39cc8d3ebaf284") << OP_3 << OP_CHECKMULTISIG;
+        const CScript scriptChallenge = CScript() << OP_1 << ParseHex("0274b9539ccf659745550818b5782d950eca2d7a0ad21fd7ab5f06348cc8ba965b") << ParseHex("0269a3bc44d5c01aef34db1c883df236187ef49c875662b39f55d16dc1fda56422") << ParseHex("0301914408f03b2aaa24e1ba628813fa6cb795eb0b40d4768568000b68b6f8e075") << OP_3 << OP_CHECKMULTISIG;
         consensus.nSubsidyHalvingInterval = 210000;
         consensus.nMajorityEnforceBlockUpgrade = 51;
         consensus.nMajorityRejectBlockOutdated = 75;
@@ -179,12 +179,12 @@ public:
         nMaxTipAge = 0x7fffffff;
         nPruneAfterHeight = 1000;
 
-        scriptCoinbaseDestination = CScript() << ParseHex("0332c05735148f7218ae9ca1902b67c14ef6b73603dd05a167d0feb3326ed9f75c") << OP_CHECKSIG;
-        genesis = CreateGenesisBlock(1504224000, scriptChallenge, 100, 0x207fffff, 1);
+        scriptCoinbaseDestination = CScript() << ParseHex("03277a5c7acd5ec83664b8bfe4c8a4424a7f8172579e3df0e857a28a1e5a62e376") << OP_CHECKSIG;
+        genesis = CreateGenesisBlock(1510768800, scriptChallenge, 100, 0x207fffff, 1);
         consensus.hashGenesisBlock = genesis.GetHash();
         // Temporarely disabled, to be restored later
-        // assert(consensus.hashGenesisBlock == uint256S("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
-        // assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        assert(consensus.hashGenesisBlock == uint256S("0xfecda7660014b377f1043fdbe176431cd110242c59d273c5a815466dda41344d"));
+        assert(genesis.hashMerkleRoot == uint256S("0x3d52a9559a2277f3bb9717ea166009f120a2caced9f6dec6c66688dd40a151b5"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -209,8 +209,8 @@ public:
             // to be filled
         };
 
-        pubKHash_gold = "da72dc932f2dc45c75cac5751f9b6ba5174e636f";
-        pubKey_gold = "02414b3f5454f6bb708d7cb2e8e04049085f45e909331c2cf21b610190a5ac1338";
+        pubKHash_gold = "04357230ff75ff8d2ae9551d3d897cd0e12bc8aa";
+        pubKey_gold = "03616bb7bcca98df378ad0da6a95f479abc453eba121f7a923f97cdbb068453f88";
 
     }
 };
