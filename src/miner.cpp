@@ -281,7 +281,7 @@ CBlockTemplate* CreateNewBlock(const CChainParams& chainparams, const CScript& s
             txNew.vout[0].scriptPubKey = CScript() << OP_RETURN;
             txNew.vout[0].nValue = 0;
         } else {
-            uint32_t rewardShards = 100;
+            uint32_t rewardShards = 1;
             txNew.vout.resize(rewardShards);
             for (unsigned int i = 0; i < rewardShards; i++) {
                 txNew.vout[i].nValue = MAX_MONEY/rewardShards;
