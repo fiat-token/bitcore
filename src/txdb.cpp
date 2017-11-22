@@ -15,6 +15,7 @@
 #include "util.h"
 
 #include <stdint.h>
+#include <tuple>
 
 #include <boost/thread.hpp>
 
@@ -30,6 +31,10 @@ static const char DB_BLOCKHASHINDEX = 'z';
 static const char DB_SPENTINDEX = 'p';
 static const char DB_BLOCK_INDEX = 'b';
 static const char DB_OPRETURNKEY_INDEX = 'k';
+static const char DB_OPRETURNKEY_IBAN = 'i';
+static const char DB_OPRETURNKEY_SIGN = 'g';
+static const char DB_OPRETURNKEY_MSG = 'm';
+
 
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_FLAG = 'F';
@@ -176,12 +181,22 @@ bool CBlockTreeDB::ReadOpReturnIndex(const std::string &scriptHash, std::string 
     return ReadSingleKey(make_pair(DB_OPRETURNKEY_INDEX, scriptHash), val);
 }
 
-bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<std::pair<std::string, std::string> >&vect) {
+bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<std::tuple<std::string, std::string, std::string> >&vect) {
     CDBBatch batch(&GetObfuscateKey());
-    for (std::vector<std::pair<std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+    for (std::vector<std::tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
     {
-        LogPrintf("Write Op Return Index: %s - %s\n",it->first, it->second);
-        batch.WriteStrings(make_pair(DB_OPRETURNKEY_INDEX, it->first), it->second);
+        LogPrintf("Write Op Return Index: %s - %s\n",std::get<1>(it), std::get<2>(it));
+        std::string db_key;
+        if (std::get<0>(it) == "1c") {
+            db_key = DB_OPRETURNKEY_IBAN;
+        } else if (std::get<0>(it) == "1d") {
+            db_key = DB_OPRETURNKEY_MSG;
+        } else if (std::get<0>(it) == "1e") {
+            db_key = DB_OPRETURNKEY_SIGN;
+        } else {
+            return error("CBlockTreeDB::WriteOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
+        }
+        batch.WriteStrings(make_pair(db_key, std::get<1>(it)), std::get<2>(it));
     }
     return WriteBatch(batch);
 }
