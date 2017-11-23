@@ -70,7 +70,7 @@ public:
     bool ReadReindexing(bool &fReindex);
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
     bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &list);
-    bool ReadOpReturnIndex(const std::string &opreturnHash, std::string &val);
+    bool ReadOpReturnIndex(const std::string &Op_type, const std::string &opreturnHash, std::string &val);
     bool WriteOpReturnIndex(const std::vector<std::pair<std::string, std::string> > &list);
     bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
     bool UpdateSpentIndex(const std::vector<std::pair<CSpentIndexKey, CSpentIndexValue> >&vect);

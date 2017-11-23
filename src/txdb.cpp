@@ -177,8 +177,16 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
 }
 
 // Op Return Index
-bool CBlockTreeDB::ReadOpReturnIndex(const std::string &scriptHash, std::string &val) {
-    return ReadSingleKey(make_pair(DB_OPRETURNKEY_INDEX, scriptHash), val);
+bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::string &scriptHash, std::string &val) {
+    if (Op_type == "1c") {
+        return ReadSingleKey(make_pair(DB_OPRETURNKEY_IBAN, scriptHash), val);
+    } else if (Op_type == "1d") {
+        return ReadSingleKey(make_pair(DB_OPRETURNKEY_MSG, scriptHash), val);
+    } else if (Op_type == "1e") {
+        return ReadSingleKey(make_pair(DB_OPRETURNKEY_SIGN, scriptHash), val);
+    } else {
+        return error(" CBlockTreeDB::ReadOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
+    }
 }
 
 bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<std::tuple<std::string, std::string, std::string> >&vect) {

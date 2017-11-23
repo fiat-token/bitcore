@@ -2378,24 +2378,10 @@ static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
 
-void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<std::tuple<std::string, std::string, std::string> > &vPubKeyPos)
-{
-    std::string script_asm = ScriptToAsmStr(scriptPubKey);
-    LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
-
-    if (script_asm.find("OP_RETURN") == std::string::npos) 
-    {
-        LogPrint("bench", "CreateOpReturnIndexes - Script '%s' is not an OP_RETURN, index not added\n", script_asm);
-        return;
-    }
-    
-    std::string substring_asm = script_asm.substr(script_asm.find(" ") + 1);
-    LogPrint("bench", "CreateOpReturnIndexes - Script ASM SUBSTRING: %s\n", substring_asm);
-
+void ParceOpReturn(std::string substring_asm, std::vector<std::pair<std::string, std::string> > &opreturnsData){
     unsigned int parsed = 0;
     unsigned int typeSize = 2;
     unsigned int lengthSize = 2;
-    std::vector<std::pair<std::string, std::string> > opreturnsData; // aggiunta coppia per il type e.g [("1d", "ae01756f"), ..]
 
     LogPrint("bench", "CreateOpReturnIndexes - substring_asm length %d\n", substring_asm.length());
     LogPrint("bench", "CreateOpReturnIndexes - Parsed index %d\n", parsed);
@@ -2434,6 +2420,27 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
         opreturnsData.push_back(std::make_pair(type, dataParsed));
     }
 
+}
+
+void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<std::tuple<std::string, std::string, std::string> > &vPubKeyPos)
+{
+    std::string script_asm = ScriptToAsmStr(scriptPubKey);
+    LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
+
+    if (script_asm.find("OP_RETURN") == std::string::npos) 
+    {
+        LogPrint("bench", "CreateOpReturnIndexes - Script '%s' is not an OP_RETURN, index not added\n", script_asm);
+        return;
+    }
+    
+    std::string substring_asm = script_asm.substr(script_asm.find(" ") + 1);
+    LogPrint("bench", "CreateOpReturnIndexes - Script ASM SUBSTRING: %s\n", substring_asm);
+
+    std::vector<std::pair<std::string, std::string> > opreturnsData; // aggiunta coppia per il type e.g [("1d", "ae01756f"), ..]
+    
+    ParceOpReturn(substring_asm, opreturnsData)
+
+
     for (std::vector<std::string>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
     {
         std::pair<std::string, std::string> opreturnData = *it;
@@ -2441,7 +2448,7 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
         std::string txihash;
         std::string delimiter(",");
 
-        if (pblocktree->ReadOpReturnIndex(opreturnData->second, txihash))
+        if (pblocktree->ReadOpReturnIndex(opreturnData->first, opreturnData->second, txihash))
         {
             LogPrintf("CreateOpReturnIndexes - Index '%s' already exists with value: '%s'\n", opreturnData->second, txihash);
             txihash = txihash + delimiter + txiid;
