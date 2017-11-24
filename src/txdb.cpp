@@ -178,6 +178,7 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
 
 // Op Return Index
 bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::string &scriptHash, std::string &val) {
+    LogPrintf("ReadOpReturnIndex: optype ->%s; key -> %s\n", Op_type, scriptHash);
     if (Op_type == "1c") {
         return ReadSingleKey(make_pair(DB_OPRETURNKEY_IBAN, scriptHash), val);
     } else if (Op_type == "1d") {
@@ -189,22 +190,22 @@ bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::stri
     }
 }
 
-bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<tuple<std::string, std::string, std::string> >&vect) {
+bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<boost::tuples::tuple<std::string, std::string, std::string> >&vect) {
     CDBBatch batch(&GetObfuscateKey());
-    for (std::vector<tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+    for (std::vector<boost::tuples::tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
     {
-        LogPrintf("Write Op Return Index: %s - %s\n",std::get<1>(it), std::get<2>(it));
         std::string db_key;
-        if (std::get<0>(it) == "1c") {
+        if (boost::tuples::get<0>(*it) == "1c") {
             db_key = DB_OPRETURNKEY_IBAN;
-        } else if (std::get<0>(it) == "1d") {
+        } else if (boost::tuples::get<0>(*it) == "1d") {
             db_key = DB_OPRETURNKEY_MSG;
-        } else if (std::get<0>(it) == "1e") {
+        } else if (boost::tuples::get<0>(*it) == "1e") {
             db_key = DB_OPRETURNKEY_SIGN;
         } else {
             return error("CBlockTreeDB::WriteOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
         }
-        batch.WriteStrings(make_pair(db_key, std::get<1>(it)), std::get<2>(it));
+        LogPrintf("Write Op Return Index: %s - %s - %s\n", db_key, boost::tuples::get<1>(*it), boost::tuples::get<2>(*it));
+        batch.WriteStrings(make_pair(db_key, boost::tuples::get<1>(*it)), boost::tuples::get<2>(*it));
     }
     return WriteBatch(batch);
 }

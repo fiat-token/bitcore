@@ -1524,7 +1524,7 @@ bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
 
     std::pair<std::string, std::string> opreturnData = opreturnsData[0];
 
-    if (pblocktree->ReadOpReturnIndex(opreturnData->first, opreturnData->second, txi)) {
+    if (pblocktree->ReadOpReturnIndex(opreturnData.first, opreturnData.second, txi)) {
         LogPrintf("GetOpReturnIndex - Hash: %s - Tx Id: %s\n", opreturnHash, txi);
         // if (tx.GetHash() != opreturnHash)
         //     return error("%s: txid mismatch", __func__);
@@ -2428,8 +2428,9 @@ void ParseOpReturn(std::string substring_asm, std::vector<std::pair<std::string,
 
 }
 
-void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<tuple<std::string, std::string, std::string> > &vPubKeyPos)
+void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<boost::tuples::tuple<std::string, std::string, std::string> > &vPubKeyPos)
 {
+    LogPrint("bench", "CreateOpReturnIndexes - scriptPubKey: %s\n", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
     std::string script_asm = ScriptToAsmStr(scriptPubKey);
     LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
 
@@ -2447,9 +2448,8 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
     ParseOpReturn(substring_asm, opreturnsData);
 
 
-    for (std::vector<std::pair<std::string, std::string>>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
+    for (std::vector<std::pair<std::string, std::string> >::const_iterator opreturnData = opreturnsData.begin(); opreturnData != opreturnsData.end(); opreturnData++)
     {
-        std::pair<std::string, std::string> opreturnData = *it;
         LogPrint("bench", "CreateOpReturnIndexes - Adding OP_RETURN data %s\n", opreturnData->second);
         std::string txihash;
         std::string delimiter(",");
@@ -2464,7 +2464,7 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
             txihash = txiid;
         }
 
-        vPubKeyPos.push_back(make_tuple(opreturnData->first, opreturnData->second, txihash));
+        vPubKeyPos.push_back(boost::tuples::make_tuple(opreturnData->first, opreturnData->second, txihash));
     }
 }
 
@@ -2589,7 +2589,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     vPos.reserve(block.vtx.size());
 
     CDiskTxPos pubKeyPos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
-    std::vector<tuple<std::string, std::string, std::string> > vPubKeyPos;
+    std::vector<boost::tuples::tuple<std::string, std::string, std::string> > vPubKeyPos;
     vPubKeyPos.reserve(block.vtx.size());
     
     blockundo.vtxundo.reserve(block.vtx.size() - 1);

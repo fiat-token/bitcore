@@ -64,6 +64,7 @@ public:
         ssKey.reserve(ssKey.GetSerializeSize(key));
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
+        LogPrintf("LevelDB - WriteStrings - slKey: %s\n", slKey.ToString());
 
         batch.Put(slKey, value);
     }
@@ -225,6 +226,7 @@ public:
         ssKey.reserve(ssKey.GetSerializeSize(key));
         ssKey << key;
         leveldb::Slice slKey(&ssKey[0], ssKey.size());
+        LogPrintf("LevelDB - ReadSingleKey - slKey: %s\n", slKey.ToString());
 
         leveldb::Status status = pdb->Get(readoptions, slKey, &value);
         LogPrintf("LevelDB - ReadSingleKey - Retrieved Values: %s\n", value);
