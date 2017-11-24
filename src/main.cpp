@@ -1520,7 +1520,7 @@ bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
     
     std::vector<std::pair<std::string, std::string> > opreturnsData;
 
-    ParceOpReturn(opreturnHash, opreturnsData);
+    ParseOpReturn(opreturnHash, opreturnsData);
 
     std::pair<std::string, std::string> opreturnData = opreturnsData[0];
 
@@ -2384,7 +2384,7 @@ static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
 
-void ParceOpReturn(std::string substring_asm, std::vector<std::pair<std::string, std::string> > &opreturnsData){
+void ParseOpReturn(std::string substring_asm, std::vector<std::pair<std::string, std::string> > &opreturnsData){
     unsigned int parsed = 0;
     unsigned int typeSize = 2;
     unsigned int lengthSize = 2;
@@ -2444,7 +2444,7 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
 
     std::vector<std::pair<std::string, std::string> > opreturnsData; // aggiunta coppia per il type e.g [("1d", "ae01756f"), ..]
     
-    ParceOpReturn(substring_asm, opreturnsData);
+    ParseOpReturn(substring_asm, opreturnsData);
 
 
     for (std::vector<std::pair<std::string, std::string>>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
