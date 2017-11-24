@@ -1517,8 +1517,14 @@ bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
         return error("op return index not enabled");
 
     LogPrintf("GetOpReturnIndex - OpreturnHash: %s\n", opreturnHash);
+    
+    std::vector<std::pair<std::string, std::string> > opreturnsData;
 
-    if (pblocktree->ReadOpReturnIndex(opreturnHash, txi)) {
+    ParceOpReturn(opreturnHash, opreturnsData);
+
+    std::pair<std::string, std::string> opreturnData = opreturnsData[0];
+
+    if (pblocktree->ReadOpReturnIndex(opreturnData->first, opreturnData->second, txi)) {
         LogPrintf("GetOpReturnIndex - Hash: %s - Tx Id: %s\n", opreturnHash, txi);
         // if (tx.GetHash() != opreturnHash)
         //     return error("%s: txid mismatch", __func__);
@@ -2438,10 +2444,10 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
 
     std::vector<std::pair<std::string, std::string> > opreturnsData; // aggiunta coppia per il type e.g [("1d", "ae01756f"), ..]
     
-    ParceOpReturn(substring_asm, opreturnsData)
+    ParceOpReturn(substring_asm, opreturnsData);
 
 
-    for (std::vector<std::string>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
+    for (std::vector<std::pair<std::string, std::string>>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
     {
         std::pair<std::string, std::string> opreturnData = *it;
         LogPrint("bench", "CreateOpReturnIndexes - Adding OP_RETURN data %s\n", opreturnData->second);

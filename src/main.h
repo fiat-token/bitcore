@@ -770,6 +770,8 @@ bool GetAddressUnspent(uint160 addressHash, int type,
 
 bool GetOpReturnIndex(std::string opreturnHash, std::string &tx);
 
+void ParceOpReturn(std::string substring_asm, std::vector<std::pair<std::string, std::string> > &opreturnsData);
+
 /** Functions for disk access for blocks */
 bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
