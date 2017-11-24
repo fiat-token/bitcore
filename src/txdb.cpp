@@ -15,8 +15,8 @@
 #include "util.h"
 
 #include <stdint.h>
-#include <tuple>
 
+#include <boost/tuple/tuple.hpp>
 #include <boost/thread.hpp>
 
 using namespace std;
@@ -189,9 +189,9 @@ bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::stri
     }
 }
 
-bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<std::tuple<std::string, std::string, std::string> >&vect) {
+bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<tuple<std::string, std::string, std::string> >&vect) {
     CDBBatch batch(&GetObfuscateKey());
-    for (std::vector<std::tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+    for (std::vector<tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
     {
         LogPrintf("Write Op Return Index: %s - %s\n",std::get<1>(it), std::get<2>(it));
         std::string db_key;

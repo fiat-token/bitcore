@@ -46,9 +46,9 @@
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #include <iostream>
-#include <tuple>
 #include <vector>
 #include "logger.cpp"
 
@@ -2428,7 +2428,7 @@ void ParseOpReturn(std::string substring_asm, std::vector<std::pair<std::string,
 
 }
 
-void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<std::tuple<std::string, std::string, std::string> > &vPubKeyPos)
+void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<tuple<std::string, std::string, std::string> > &vPubKeyPos)
 {
     std::string script_asm = ScriptToAsmStr(scriptPubKey);
     LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
@@ -2464,7 +2464,7 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
             txihash = txiid;
         }
 
-        vPubKeyPos.push_back(std::make_tuple(opreturnData->first, opreturnData->second, txihash));
+        vPubKeyPos.push_back(make_tuple(opreturnData->first, opreturnData->second, txihash));
     }
 }
 
@@ -2589,7 +2589,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     vPos.reserve(block.vtx.size());
 
     CDiskTxPos pubKeyPos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
-    std::vector<std::tuple<std::string, std::string, std::string> > vPubKeyPos;
+    std::vector<tuple<std::string, std::string, std::string> > vPubKeyPos;
     vPubKeyPos.reserve(block.vtx.size());
     
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
