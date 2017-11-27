@@ -180,11 +180,11 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
 bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::string &scriptHash, std::string &val) {
     LogPrintf("ReadOpReturnIndex: optype ->%s; key -> %s\n", Op_type, scriptHash);
     if (Op_type == "1c") {
-        return ReadSingleKey(make_pair(DB_OPRETURNKEY_IBAN, scriptHash), val);
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, scriptHash), val);
     } else if (Op_type == "1d") {
-        return ReadSingleKey(make_pair(DB_OPRETURNKEY_MSG, scriptHash), val);
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_MSG, scriptHash), val);
     } else if (Op_type == "1e") {
-        return ReadSingleKey(make_pair(DB_OPRETURNKEY_SIGN, scriptHash), val);
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_SIGN, scriptHash), val);
     } else {
         return error(" CBlockTreeDB::ReadOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
     }
@@ -194,18 +194,22 @@ bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<boost::tuples::tuple<std
     CDBBatch batch(&GetObfuscateKey());
     for (std::vector<boost::tuples::tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
     {
-        std::string db_key;
+        std::string opKey = boost::tuples::get<1>(*it);
+        std::string opVal = boost::tuples::get<2>(*it);
+
         if (boost::tuples::get<0>(*it) == "1c") {
-            db_key = DB_OPRETURNKEY_IBAN;
+            LogPrintf("Write Op Return Index: %s - %s - %s\n", DB_OPRETURNKEY_IBAN, opKey, opVal);
+            batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_IBAN, opKey), opVal);
         } else if (boost::tuples::get<0>(*it) == "1d") {
-            db_key = DB_OPRETURNKEY_MSG;
+            LogPrintf("Write Op Return Index: %s - %s - %s\n", DB_OPRETURNKEY_MSG, opKey, opVal);
+            batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_MSG, opKey), opVal);
         } else if (boost::tuples::get<0>(*it) == "1e") {
-            db_key = DB_OPRETURNKEY_SIGN;
+            LogPrintf("Write Op Return Index: %s - %s - %s\n", DB_OPRETURNKEY_SIGN, opKey, opVal);
+            batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_SIGN, opKey), opVal);
         } else {
             return error("CBlockTreeDB::WriteOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
         }
-        LogPrintf("Write Op Return Index: %s - %s - %s\n", db_key, boost::tuples::get<1>(*it), boost::tuples::get<2>(*it));
-        batch.WriteStrings(make_pair(db_key, boost::tuples::get<1>(*it)), boost::tuples::get<2>(*it));
+        
     }
     return WriteBatch(batch);
 }
