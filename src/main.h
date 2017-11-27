@@ -769,7 +769,7 @@ bool GetAddressUnspent(uint160 addressHash, int type,
                        std::vector<std::pair<CAddressUnspentKey, CAddressUnspentValue> > &unspentOutputs);
 
 bool GetOpReturnIndex(std::string opreturnHash, std::string &tx);
-bool GetSendToIbanIndex(std::string &val)
+bool GetSendToIbanIndex(std::string &val);
 
 void ParseOpReturn(std::string substring_asm, std::vector<std::pair<std::string, std::string> > &opreturnsData);
 

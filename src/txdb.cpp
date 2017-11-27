@@ -18,6 +18,8 @@
 
 #include <boost/tuple/tuple.hpp>
 #include <boost/thread.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 
@@ -202,13 +204,21 @@ bool CBlockTreeDB::ReadSendToIban(std::string &val){
         std::string delimiter(",");
         for (std::vector < std::string >::const_iterator it=vectscriptHash.begin(); it!=vectscriptHash.end(); it++){
             std::string val_temp;
-            ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, it), val_temp);
-            val = val + delimiter + val_temp;
+            if(ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, *it), val_temp))
+                val = val + delimiter + val_temp;
+            else
+                LogPrintf("ReadSendToIban: IBAN not found -> %s\n", *it);
         }
         return true;
     } else {
         return error(" CBlockTreeDB::ReadSendToIban() : sendtoiban key not exist");
     }
+}
+
+bool CBlockTreeDB::WriteSendToIBAN(const std::string &send_to_iban, const std::string &opretunDataIban) {
+    CDBBatch batch(&GetObfuscateKey());
+    batch.WriteStrings(send_to_iban, opretunDataIban);
+    return WriteBatch(batch);
 }
 
 bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<boost::tuples::tuple<std::string, std::string, std::string> >&vect) {

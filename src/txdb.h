@@ -71,7 +71,8 @@ public:
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
     bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &list);
     bool ReadOpReturnIndex(const std::string &Op_type, const std::string &opreturnHash, std::string &val);
-    bool ReadSendToIban(std::string &val)
+    bool ReadSendToIban(std::string &val);
+    bool WriteSendToIBAN(const std::string &send_to_iban, const std::string &opretunDataIban);
     bool WriteOpReturnIndex(const std::vector<boost::tuples::tuple<std::string, std::string, std::string> > &list);
     bool ReadSpentIndex(CSpentIndexKey &key, CSpentIndexValue &value);
     bool UpdateSpentIndex(const std::vector<std::pair<CSpentIndexKey, CSpentIndexValue> >&vect);

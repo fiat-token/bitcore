@@ -2478,15 +2478,18 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
         {
             txihash = txiid;
             std::string opretunDataIban;
-            if (opreturnData->first == "1c"){
+            if (opreturnData->first == "1c") {
                 std::string send_to_iban = "send_to_iban";
                 if (pblocktree->ReadOpReturnIndex(send_to_iban, send_to_iban, opretunDataIban)){
-                    opretunDataIban = opretunDataIban + delimiter + opreturnData->second
+                    opretunDataIban = opretunDataIban + delimiter + opreturnData->second;
                 } else {
-                    opretunDataIban = opreturnData->second
+                    opretunDataIban = opreturnData->second;
                 }
-                batch.WriteStrings(send_to_iban, opretunDataIban);
-                WriteBatch(batch);
+
+                if(!pblocktree->WriteSendToIBAN(send_to_iban, opretunDataIban))
+                {
+                    error("WriteSendToIBAN(): send_to_iban not found");
+                }
             }
         }
 
