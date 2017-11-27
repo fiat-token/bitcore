@@ -30,7 +30,7 @@ static const char DB_TIMESTAMPINDEX = 's';
 static const char DB_BLOCKHASHINDEX = 'z';
 static const char DB_SPENTINDEX = 'p';
 static const char DB_BLOCK_INDEX = 'b';
-static const char DB_OPRETURNKEY_INDEX = 'k';
+static const char DB_OPRETURNKEY_ALL_IBAN = 'k';
 static const char DB_OPRETURNKEY_IBAN = 'i';
 static const char DB_OPRETURNKEY_SIGN = 'g';
 static const char DB_OPRETURNKEY_MSG = 'm';
@@ -185,8 +185,29 @@ bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::stri
         return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_MSG, scriptHash), val);
     } else if (Op_type == "1e") {
         return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_SIGN, scriptHash), val);
+    } else if (Op_type == "send_to_iban"){
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_ALL_IBAN, scriptHash), val);
     } else {
         return error(" CBlockTreeDB::ReadOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
+    }
+}
+
+bool CBlockTreeDB::ReadSendToIban(std::string &val){
+    std::string send_to_iban = "send_to_iban";
+    std::string scriptHash;
+    if (ReadSingleKey(std::make_pair(DB_OPRETURNKEY_ALL_IBAN, send_to_iban), scriptHash)) {
+        std::vector<std::string> txidsArray;
+        std::vector<std::string> vectscriptHash;
+        boost::split(vectscriptHash, scriptHash, boost::is_any_of(","));
+        std::string delimiter(",");
+        for (std::vector < std::string >::const_iterator it=vectscriptHash.begin(); it!=vectscriptHash.end(); it++){
+            std::string val_temp;
+            ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, it), val_temp);
+            val = val + delimiter + val_temp;
+        }
+        return true;
+    } else {
+        return error(" CBlockTreeDB::ReadSendToIban() : sendtoiban key not exist");
     }
 }
 

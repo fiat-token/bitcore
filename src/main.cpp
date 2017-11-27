@@ -1509,6 +1509,21 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
+bool GetSendToIbanIndex(std::string &val)
+{
+    LogPrintf("GetSendToIban Init\n");
+
+    if (!fOpReturnIndex)
+        return error("op return index not enabled");
+
+    if (pblocktree->ReadSendToIban(val)) {
+        LogPrintf("GetSendToIban - val: %s \n", val);
+        return true;
+    }
+    
+    return false;
+}
+
 bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
 {
     LogPrintf("GetOpReturnIndex Init\n");
@@ -2462,6 +2477,17 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
         else
         {
             txihash = txiid;
+            std::string opretunDataIban;
+            if (opreturnData->first == "1c"){
+                std::string send_to_iban = "send_to_iban";
+                if (pblocktree->ReadOpReturnIndex(send_to_iban, send_to_iban, opretunDataIban)){
+                    opretunDataIban = opretunDataIban + delimiter + opreturnData->second
+                } else {
+                    opretunDataIban = opreturnData->second
+                }
+                batch.WriteStrings(send_to_iban, opretunDataIban);
+                WriteBatch(batch);
+            }
         }
 
         vPubKeyPos.push_back(boost::tuples::make_tuple(opreturnData->first, opreturnData->second, txihash));
