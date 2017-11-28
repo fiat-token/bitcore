@@ -211,7 +211,7 @@ bool CBlockTreeDB::ReadSendToIban(std::string &val){
                 val = val + delimiter + val_temp;
             }
             else
-                LogPrintf("ReadSendToIban: IBAN not found -> %s\n", *it);
+                LogPrintf("ReadSendToIban: IBAN not found any-> %s\n", *it);
         }
         return true;
     } else {
