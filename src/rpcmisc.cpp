@@ -889,7 +889,7 @@ UniValue getsendtoiban(const UniValue& params, bool fHelp)
         throw runtime_error("Parameters Error");
 
     LOCK(cs_main);
-
+    LogPrintf("rpcmisc - getsendtoiban - init\n");
     std::string txids;
 
     if (!GetSendToIbanIndex(txids))
