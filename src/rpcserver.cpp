@@ -327,6 +327,7 @@ static const CRPCCommand vRPCCommands[] =
 
     /* Op Return index */
     { "opreturnindex",      "getopreturn",            &getopreturn,            false },
+    { "opreturnindex",      "getsendtoiban",          &getsendtoiban,          false },
 
     /* Utility functions */
     { "util",               "createmultisig",         &createmultisig,         true  },

@@ -16,7 +16,10 @@
 
 #include <stdint.h>
 
+#include <boost/tuple/tuple.hpp>
 #include <boost/thread.hpp>
+#include <boost/assign/list_of.hpp>
+#include <boost/algorithm/string.hpp>
 
 using namespace std;
 
@@ -29,7 +32,11 @@ static const char DB_TIMESTAMPINDEX = 's';
 static const char DB_BLOCKHASHINDEX = 'z';
 static const char DB_SPENTINDEX = 'p';
 static const char DB_BLOCK_INDEX = 'b';
-static const char DB_OPRETURNKEY_INDEX = 'k';
+static const char DB_OPRETURNKEY_ALL_IBAN = 'k';
+static const char DB_OPRETURNKEY_IBAN = 'i';
+static const char DB_OPRETURNKEY_SIGN = 'g';
+static const char DB_OPRETURNKEY_MSG = 'm';
+
 
 static const char DB_BEST_BLOCK = 'B';
 static const char DB_FLAG = 'F';
@@ -172,16 +179,73 @@ bool CBlockTreeDB::WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos>
 }
 
 // Op Return Index
-bool CBlockTreeDB::ReadOpReturnIndex(const std::string &scriptHash, std::string &val) {
-    return ReadSingleKey(make_pair(DB_OPRETURNKEY_INDEX, scriptHash), val);
+bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::string &scriptHash, std::string &val) {
+    LogPrintf("ReadOpReturnIndex: optype ->%s; key -> %s\n", Op_type, scriptHash);
+    if (Op_type == "1c") {
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, scriptHash), val);
+    } else if (Op_type == "1d") {
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_MSG, scriptHash), val);
+    } else if (Op_type == "1e") {
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_SIGN, scriptHash), val);
+    } else if (Op_type == "send_to_iban"){
+        return ReadSingleKey(std::make_pair(DB_OPRETURNKEY_ALL_IBAN, scriptHash), val);
+    } else {
+        return error(" CBlockTreeDB::ReadOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
+    }
 }
 
-bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<std::pair<std::string, std::string> >&vect) {
+bool CBlockTreeDB::ReadSendToIban(std::string &val){
+    std::string send_to_iban = "send_to_iban";
+    std::string scriptHash;
+    LogPrintf("CBlockTreeDB::ReadSendToIban %s\n", val);
+    if (ReadSingleKey(std::make_pair(DB_OPRETURNKEY_ALL_IBAN, send_to_iban), scriptHash)) {
+        LogPrintf("ReadSingleKey: scriptHash: %s - \n", scriptHash);
+        std::vector<std::string> txidsArray;
+        std::vector<std::string> vectscriptHash;
+        boost::split(vectscriptHash, scriptHash, boost::is_any_of(","));
+        std::string delimiter(",");
+        for (std::vector < std::string >::const_iterator it=vectscriptHash.begin(); it!=vectscriptHash.end(); it++){
+            std::string val_temp;
+            if(ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, *it), val_temp)){
+                LogPrintf("ReadSingleKey IBAN found -> %s\n", *it);
+                val = val + delimiter + val_temp;
+            }
+            else
+                LogPrintf("ReadSendToIban: IBAN not found any-> %s\n", *it);
+        }
+        return true;
+    } else {
+        return error(" CBlockTreeDB::ReadSendToIban() : sendtoiban key not exist");
+    }
+}
+
+bool CBlockTreeDB::WriteSendToIBAN(const std::string &send_to_iban, const std::string &opretunDataIban) {
+    LogPrintf("CBlockTreeDB::WriteSendToIBAN: %s\n", opretunDataIban);
     CDBBatch batch(&GetObfuscateKey());
-    for (std::vector<std::pair<std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
+    batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_ALL_IBAN,send_to_iban), opretunDataIban);
+    return WriteBatch(batch);
+}
+
+bool CBlockTreeDB::WriteOpReturnIndex(const std::vector<boost::tuples::tuple<std::string, std::string, std::string> >&vect) {
+    CDBBatch batch(&GetObfuscateKey());
+    for (std::vector<boost::tuples::tuple<std::string, std::string, std::string> >::const_iterator it=vect.begin(); it!=vect.end(); it++)
     {
-        LogPrintf("Write Op Return Index: %s - %s\n",it->first, it->second);
-        batch.WriteStrings(make_pair(DB_OPRETURNKEY_INDEX, it->first), it->second);
+        std::string opKey = boost::tuples::get<1>(*it);
+        std::string opVal = boost::tuples::get<2>(*it);
+
+        if (boost::tuples::get<0>(*it) == "1c") {
+            LogPrintf("Write Op Return Index: %s - %s - %s\n", DB_OPRETURNKEY_IBAN, opKey, opVal);
+            batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_IBAN, opKey), opVal);
+        } else if (boost::tuples::get<0>(*it) == "1d") {
+            LogPrintf("Write Op Return Index: %s - %s - %s\n", DB_OPRETURNKEY_MSG, opKey, opVal);
+            batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_MSG, opKey), opVal);
+        } else if (boost::tuples::get<0>(*it) == "1e") {
+            LogPrintf("Write Op Return Index: %s - %s - %s\n", DB_OPRETURNKEY_SIGN, opKey, opVal);
+            batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_SIGN, opKey), opVal);
+        } else {
+            return error("CBlockTreeDB::WriteOpReturnIndex() : unexpected Op Return type (1c, 1d, 1e)");
+        }
+        
     }
     return WriteBatch(batch);
 }

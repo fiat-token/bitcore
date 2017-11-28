@@ -46,6 +46,7 @@
 #include <boost/math/distributions/poisson.hpp>
 #include <boost/thread.hpp>
 #include <boost/assign/list_of.hpp>
+#include <boost/tuple/tuple.hpp>
 
 #include <iostream>
 #include <vector>
@@ -1508,6 +1509,21 @@ bool GetAddressUnspent(uint160 addressHash, int type,
     return true;
 }
 
+bool GetSendToIbanIndex(std::string &val)
+{
+    LogPrintf("GetSendToIban Init\n");
+
+    if (!fOpReturnIndex)
+        return error("op return index not enabled");
+
+    if (pblocktree->ReadSendToIban(val)) {
+        LogPrintf("GetSendToIban - val: %s \n", val);
+        return true;
+    }
+    
+    return false;
+}
+
 bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
 {
     LogPrintf("GetOpReturnIndex Init\n");
@@ -1516,8 +1532,14 @@ bool GetOpReturnIndex(std::string opreturnHash, std::string &txi)
         return error("op return index not enabled");
 
     LogPrintf("GetOpReturnIndex - OpreturnHash: %s\n", opreturnHash);
+    
+    std::vector<std::pair<std::string, std::string> > opreturnsData;
 
-    if (pblocktree->ReadOpReturnIndex(opreturnHash, txi)) {
+    ParseOpReturn(opreturnHash, opreturnsData);
+
+    std::pair<std::string, std::string> opreturnData = opreturnsData[0];
+
+    if (pblocktree->ReadOpReturnIndex(opreturnData.first, opreturnData.second, txi)) {
         LogPrintf("GetOpReturnIndex - Hash: %s - Tx Id: %s\n", opreturnHash, txi);
         // if (tx.GetHash() != opreturnHash)
         //     return error("%s: txid mismatch", __func__);
@@ -2377,24 +2399,10 @@ static int64_t nTimeCallbacks = 0;
 static int64_t nTimeTotal = 0;
 
 
-void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<std::pair<std::string, std::string> > &vPubKeyPos)
-{
-    std::string script_asm = ScriptToAsmStr(scriptPubKey);
-    LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
-
-    if (script_asm.find("OP_RETURN") == std::string::npos) 
-    {
-        LogPrint("bench", "CreateOpReturnIndexes - Script '%s' is not an OP_RETURN, index not added\n", script_asm);
-        return;
-    }
-    
-    std::string substring_asm = script_asm.substr(script_asm.find(" ") + 1);
-    LogPrint("bench", "CreateOpReturnIndexes - Script ASM SUBSTRING: %s\n", substring_asm);
-
+void ParseOpReturn(std::string substring_asm, std::vector<std::pair<std::string, std::string> > &opreturnsData){
     unsigned int parsed = 0;
     unsigned int typeSize = 2;
     unsigned int lengthSize = 2;
-    std::vector<std::string> opreturnsData;
 
     LogPrint("bench", "CreateOpReturnIndexes - substring_asm length %d\n", substring_asm.length());
     LogPrint("bench", "CreateOpReturnIndexes - Parsed index %d\n", parsed);
@@ -2430,27 +2438,66 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
         std::string dataParsed = substring_asm.substr(parsed, length);
         LogPrint("bench", "CreateOpReturnIndexes - OP_RETURN data parsed: %s\n", dataParsed);
         parsed = parsed + length;
-        opreturnsData.push_back(dataParsed);
+        opreturnsData.push_back(std::make_pair(type, dataParsed));
     }
 
-    for (std::vector<std::string>::const_iterator it = opreturnsData.begin(); it != opreturnsData.end(); it++)
+}
+
+void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::vector<boost::tuples::tuple<std::string, std::string, std::string> > &vPubKeyPos)
+{
+    LogPrint("bench", "CreateOpReturnIndexes - scriptPubKey: %s\n", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
+    std::string script_asm = ScriptToAsmStr(scriptPubKey);
+    LogPrint("bench", "CreateOpReturnIndexes - Script ASM: %s\n", script_asm);
+
+    if (script_asm.find("OP_RETURN") == std::string::npos) 
     {
-        std::string opreturnData = *it;
-        LogPrint("bench", "CreateOpReturnIndexes - Adding OP_RETURN data %s\n", opreturnData);
+        LogPrint("bench", "CreateOpReturnIndexes - Script '%s' is not an OP_RETURN, index not added\n", script_asm);
+        return;
+    }
+    
+    std::string substring_asm = script_asm.substr(script_asm.find(" ") + 1);
+    LogPrint("bench", "CreateOpReturnIndexes - Script ASM SUBSTRING: %s\n", substring_asm);
+
+    std::vector<std::pair<std::string, std::string> > opreturnsData; // aggiunta coppia per il type e.g [("1d", "ae01756f"), ..]
+    
+    ParseOpReturn(substring_asm, opreturnsData);
+
+
+    for (std::vector<std::pair<std::string, std::string> >::const_iterator opreturnData = opreturnsData.begin(); opreturnData != opreturnsData.end(); opreturnData++)
+    {
+        LogPrint("bench", "CreateOpReturnIndexes - Adding OP_RETURN data %s\n", opreturnData->second);
         std::string txihash;
         std::string delimiter(",");
 
-        if (pblocktree->ReadOpReturnIndex(opreturnData, txihash))
+        if (pblocktree->ReadOpReturnIndex(opreturnData->first, opreturnData->second, txihash))
         {
-            LogPrintf("CreateOpReturnIndexes - Index '%s' already exists with value: '%s'\n", opreturnData, txihash);
+            LogPrintf("CreateOpReturnIndexes - Index '%s' already exists with value: '%s'\n", opreturnData->second, txihash);
             txihash = txihash + delimiter + txiid;
         }
         else
         {
             txihash = txiid;
+            std::string opretunDataIban;
+            if (opreturnData->first == "1c") {
+                LogPrintf("CreateOpReturnIndexes - opreturnData->first '%s' \n", opreturnData->first);
+                std::string send_to_iban = "send_to_iban";
+                if (pblocktree->ReadOpReturnIndex(send_to_iban, send_to_iban, opretunDataIban)){
+                    LogPrintf("CreateOpReturnIndexes - found send to iban '%s' \n", opretunDataIban);
+                    opretunDataIban = opretunDataIban + delimiter + opreturnData->second;
+                    LogPrintf("CreateOpReturnIndexes - found send to iban '%s' \n", opretunDataIban);                    
+                } else {
+                    opretunDataIban = opreturnData->second;
+                    LogPrintf("CreateOpReturnIndexes - not found send to iban '%s' \n", opretunDataIban);
+                }
+
+                if(!pblocktree->WriteSendToIBAN(send_to_iban, opretunDataIban))
+                {
+                    error("WriteSendToIBAN(): send_to_iban not found");
+                }
+            }
         }
 
-        vPubKeyPos.push_back(std::make_pair(opreturnData, txihash));
+        vPubKeyPos.push_back(boost::tuples::make_tuple(opreturnData->first, opreturnData->second, txihash));
     }
 }
 
@@ -2575,7 +2622,7 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
     vPos.reserve(block.vtx.size());
 
     CDiskTxPos pubKeyPos(pindex->GetBlockPos(), GetSizeOfCompactSize(block.vtx.size()));
-    std::vector<std::pair<std::string, std::string> > vPubKeyPos;
+    std::vector<boost::tuples::tuple<std::string, std::string, std::string> > vPubKeyPos;
     vPubKeyPos.reserve(block.vtx.size());
     
     blockundo.vtxundo.reserve(block.vtx.size() - 1);

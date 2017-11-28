@@ -173,6 +173,7 @@ extern UniValue getaddresstxids(const UniValue& params, bool fHelp);
 extern UniValue getaddressbalance(const UniValue& params, bool fHelp);
 
 extern UniValue getopreturn(const UniValue& params, bool fHelp);
+extern UniValue getsendtoiban(const UniValue& params, bool fHelp);
 
 extern UniValue getpeerinfo(const UniValue& params, bool fHelp);
 extern UniValue ping(const UniValue& params, bool fHelp);
