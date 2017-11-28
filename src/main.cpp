@@ -47,7 +47,9 @@
 #include <boost/thread.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/algorithm/string.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include "logger.cpp"
@@ -2481,17 +2483,22 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
             if (opreturnData->first == "1c") {
                 LogPrintf("CreateOpReturnIndexes - opreturnData->first '%s' \n", opreturnData->first);
                 std::string send_to_iban = "send_to_iban";
-                if (pblocktree->ReadOpReturnIndex(send_to_iban, send_to_iban, opretunDataIban)){
+                if (pblocktree->ReadOpReturnIndex(send_to_iban, send_to_iban, opretunDataIban)) {
                     LogPrintf("CreateOpReturnIndexes - found send to iban '%s' \n", opretunDataIban);
-                    opretunDataIban = opretunDataIban + delimiter + opreturnData->second;
-                    LogPrintf("CreateOpReturnIndexes - found send to iban '%s' \n", opretunDataIban);                    
+
+                    std::vector<std::string> opretunDataIbanArray;
+                    boost::split(opretunDataIbanArray, opretunDataIban, boost::is_any_of(","));
+
+                    if(!(std::find(opretunDataIbanArray.begin(), opretunDataIbanArray.end(), opreturnData->second) != opretunDataIbanArray.end()))
+                        opretunDataIban = opretunDataIban + delimiter + opreturnData->second;
+
+                    LogPrintf("CreateOpReturnIndexes - found send to iban '%s' \n", opretunDataIban);
                 } else {
                     opretunDataIban = opreturnData->second;
                     LogPrintf("CreateOpReturnIndexes - not found send to iban '%s' \n", opretunDataIban);
                 }
 
-                if(!pblocktree->WriteSendToIBAN(send_to_iban, opretunDataIban))
-                {
+                if (!pblocktree->WriteSendToIBAN(send_to_iban, opretunDataIban)) {
                     error("WriteSendToIBAN(): send_to_iban not found");
                 }
             }
