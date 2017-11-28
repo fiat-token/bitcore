@@ -208,7 +208,7 @@ bool CBlockTreeDB::ReadSendToIban(std::string &val){
             std::string val_temp;
             if(ReadSingleKey(std::make_pair(DB_OPRETURNKEY_IBAN, *it), val_temp)){
                 LogPrintf("ReadSingleKey IBAN found -> %s\n", *it);
-                val = val + delimiter + val_temp;
+                val = (val == "") ? val_temp : val + delimiter + val_temp;
             }
             else
                 LogPrintf("ReadSendToIban: IBAN not found any-> %s\n", *it);
@@ -219,10 +219,12 @@ bool CBlockTreeDB::ReadSendToIban(std::string &val){
     }
 }
 
-bool CBlockTreeDB::WriteSendToIBAN(const std::string &send_to_iban, const std::string &opretunDataIban) {
+bool CBlockTreeDB::WriteSendToIBAN(const std::string& send_to_iban, const std::string& opretunDataIban)
+{
     LogPrintf("CBlockTreeDB::WriteSendToIBAN: %s\n", opretunDataIban);
     CDBBatch batch(&GetObfuscateKey());
-    batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_ALL_IBAN,send_to_iban), opretunDataIban);
+    LogPrintf("CBlockTreeDB::WriteSendToIBAN: type -> %c  key -> %s\n", DB_OPRETURNKEY_ALL_IBAN, send_to_iban);
+    batch.WriteStrings(std::make_pair(DB_OPRETURNKEY_ALL_IBAN, send_to_iban), opretunDataIban);
     return WriteBatch(batch);
 }
 
