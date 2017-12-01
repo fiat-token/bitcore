@@ -2479,8 +2479,8 @@ void static CreateOpReturnIndexes(CScript scriptPubKey, std::string txiid, std::
         else
         {
             txihash = txiid;
-            std::string opretunDataIban;
             if (opreturnData->first == "1c") {
+                std::string opretunDataIban;
                 LogPrintf("CreateOpReturnIndexes - opreturnData->first '%s' \n", opreturnData->first);
                 if (pblocktree->ReadOpReturnIndex(send_to_iban, send_to_iban, opretunDataIban)) {
                     LogPrintf("CreateOpReturnIndexes - found send to iban '%s' \n", opretunDataIban);
