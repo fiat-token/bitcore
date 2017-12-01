@@ -195,7 +195,6 @@ bool CBlockTreeDB::ReadOpReturnIndex(const std::string &Op_type, const std::stri
 }
 
 bool CBlockTreeDB::ReadSendToIban(std::string &val){
-    std::string send_to_iban = "send_to_iban";
     std::string scriptHash;
     LogPrintf("CBlockTreeDB::ReadSendToIban %s\n", val);
     if (ReadSingleKey(std::make_pair(DB_OPRETURNKEY_ALL_IBAN, send_to_iban), scriptHash)) {

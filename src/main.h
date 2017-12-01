@@ -132,6 +132,9 @@ struct BlockHasher
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
 };
 
+/** Default string to find out all the sendToIBAN in the leveldDB */
+const std::string send_to_iban = "send_to_iban";
+
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CTxMemPool mempool;
